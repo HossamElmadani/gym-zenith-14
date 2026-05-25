@@ -28,7 +28,7 @@ export function GymApp() {
 
   return (
     <div className={cn("min-h-screen flex", themeClass)}>
-      <GymSidebar view={view} accentLabel={accentLabel} />
+      <GymSidebar view={view === "member" ? "member" : "admin"} accentLabel={accentLabel} />
 
       <main className="flex-1 p-3 md:p-5 space-y-4">
         {/* Top bar */}
@@ -56,6 +56,15 @@ export function GymApp() {
                 <Users className="size-3.5" /> Admin
               </button>
               <button
+                onClick={() => setView("onboard")}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all",
+                  view === "onboard" ? "bg-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <UserPlus className="size-3.5" /> Onboard
+              </button>
+              <button
                 onClick={() => setView("member")}
                 className={cn(
                   "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all",
@@ -70,7 +79,7 @@ export function GymApp() {
               <Bell className="size-4" />
             </Button>
             <div className="size-9 rounded-full bg-gradient-to-br from-primary to-primary/40 grid place-items-center text-xs font-semibold text-primary-foreground">
-              {view === "admin" ? "AD" : "LC"}
+              {view === "member" ? "LC" : "AD"}
             </div>
           </div>
         </div>
@@ -79,17 +88,21 @@ export function GymApp() {
         <div className="px-1 flex items-end justify-between">
           <div>
             <h1 className="text-xl md:text-2xl font-semibold tracking-tight">
-              {view === "admin" ? "Operations Dashboard" : "My Dashboard"}
+              {view === "admin" ? "Operations Dashboard" : view === "onboard" ? "New Member Onboarding" : "My Dashboard"}
             </h1>
             <p className="text-sm text-muted-foreground">
               {view === "admin"
                 ? "Adaptive insights filtered to today's gender schedule."
+                : view === "onboard"
+                ? "Create a profile, assign a plan, and welcome them in."
                 : "Your training, rewards and bookings in one place."}
             </p>
           </div>
         </div>
 
-        {view === "admin" ? <AdminView todayMode={mode} dayLabel={label} /> : <MemberView />}
+        {view === "admin" && <AdminView todayMode={mode} dayLabel={label} />}
+        {view === "onboard" && <OnboardingView />}
+        {view === "member" && <MemberView />}
       </main>
     </div>
   );

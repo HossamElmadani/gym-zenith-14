@@ -185,7 +185,7 @@ export function OnboardingView() {
 
           <div className="space-y-1.5">
             <Label>Gender</Label>
-            <Select value={gender} onValueChange={(v) => setGender(v as "male" | "female")}>
+            <Select value={gender || undefined} onValueChange={(v) => setGender(v as "male" | "female")}>
               <SelectTrigger className="bg-background/50"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="male">Male</SelectItem>

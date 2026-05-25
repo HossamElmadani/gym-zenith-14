@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bell, Search, Users, User } from "lucide-react";
+import { Bell, Search, Users, User, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,10 +7,13 @@ import { cn } from "@/lib/utils";
 import { GymSidebar } from "./Sidebar";
 import { AdminView } from "./AdminView";
 import { MemberView } from "./MemberView";
+import { OnboardingView } from "./OnboardingView";
 import { dayName, todayGender } from "@/lib/gym-data";
 
+type View = "admin" | "member" | "onboard";
+
 export function GymApp() {
-  const [view, setView] = useState<"admin" | "member">("admin");
+  const [view, setView] = useState<View>("admin");
   const today = useMemo(() => new Date(), []);
   const mode = todayGender(today);
   const label = dayName(today);

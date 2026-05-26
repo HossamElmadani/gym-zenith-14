@@ -98,11 +98,16 @@ export function GymApp() {
         <div className="px-1 flex items-end justify-between">
           <div>
             <h1 className="text-xl md:text-2xl font-semibold tracking-tight">
-              {view === "admin" ? "Operations Dashboard" : view === "onboard" ? "New Member Onboarding" : "My Dashboard"}
+              {view === "admin" ? "Operations Dashboard"
+                : view === "members" ? "Members Directory"
+                : view === "onboard" ? "New Member Onboarding"
+                : "My Dashboard"}
             </h1>
             <p className="text-sm text-muted-foreground">
               {view === "admin"
                 ? "Adaptive insights filtered to today's gender schedule."
+                : view === "members"
+                ? "Retention pipeline, renewals and full member records."
                 : view === "onboard"
                 ? "Create a profile, assign a plan, and welcome them in."
                 : "Your training, rewards and bookings in one place."}
@@ -111,6 +116,7 @@ export function GymApp() {
         </div>
 
         {view === "admin" && <AdminView todayMode={mode} dayLabel={label} />}
+        {view === "members" && <MembersDirectory />}
         {view === "onboard" && <OnboardingView />}
         {view === "member" && <MemberView />}
       </main>

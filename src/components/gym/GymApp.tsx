@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bell, Search, Users, User, UserPlus, BookUser } from "lucide-react";
+import { Bell, Search, Users, User, UserPlus, BookUser, ScanLine } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +9,10 @@ import { AdminView } from "./AdminView";
 import { MemberView } from "./MemberView";
 import { OnboardingView } from "./OnboardingView";
 import { MembersDirectory } from "./MembersDirectory";
+import { ReceptionDesk } from "./ReceptionDesk";
 import { dayName, todayGender } from "@/lib/gym-data";
 
-type View = "admin" | "members" | "member" | "onboard";
+type View = "admin" | "members" | "member" | "onboard" | "reception";
 
 export function GymApp() {
   const [view, setView] = useState<View>("admin");
@@ -66,6 +67,15 @@ export function GymApp() {
                 <BookUser className="size-3.5" /> Members
               </button>
               <button
+                onClick={() => setView("reception")}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all",
+                  view === "reception" ? "bg-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <ScanLine className="size-3.5" /> Reception
+              </button>
+              <button
                 onClick={() => setView("onboard")}
                 className={cn(
                   "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all",
@@ -100,6 +110,7 @@ export function GymApp() {
             <h1 className="text-xl md:text-2xl font-semibold tracking-tight">
               {view === "admin" ? "Operations Dashboard"
                 : view === "members" ? "Members Directory"
+                : view === "reception" ? "Reception Check-in Desk"
                 : view === "onboard" ? "New Member Onboarding"
                 : "My Dashboard"}
             </h1>
@@ -108,6 +119,8 @@ export function GymApp() {
                 ? "Adaptive insights filtered to today's gender schedule."
                 : view === "members"
                 ? "Retention pipeline, renewals and full member records."
+                : view === "reception"
+                ? "Scan, validate and grant access in real time."
                 : view === "onboard"
                 ? "Create a profile, assign a plan, and welcome them in."
                 : "Your training, rewards and bookings in one place."}
@@ -117,6 +130,7 @@ export function GymApp() {
 
         {view === "admin" && <AdminView todayMode={mode} dayLabel={label} />}
         {view === "members" && <MembersDirectory />}
+        {view === "reception" && <ReceptionDesk />}
         {view === "onboard" && <OnboardingView />}
         {view === "member" && <MemberView />}
       </main>

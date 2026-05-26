@@ -67,6 +67,15 @@ export function GymApp() {
                 <BookUser className="size-3.5" /> Members
               </button>
               <button
+                onClick={() => setView("reception")}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all",
+                  view === "reception" ? "bg-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <ScanLine className="size-3.5" /> Reception
+              </button>
+              <button
                 onClick={() => setView("onboard")}
                 className={cn(
                   "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all",

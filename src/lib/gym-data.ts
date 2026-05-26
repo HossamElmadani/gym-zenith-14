@@ -1,27 +1,72 @@
 export type Gender = "male" | "female";
 
+export type SubHistory = { date: string; plan: string; months: number };
+
 export type Member = {
   id: string;
   name: string;
+  cin: string;
+  phone: string;
   gender: Gender;
   lastCheckIn: string; // ISO
   streak: number;
   points: number;
   plan: "Basic" | "Pro" | "Elite";
   churnRisk: number; // 0-100
+  subStart: string;   // ISO
+  subEnd: string;     // ISO
+  subMonths: number;
+  history: SubHistory[];
+  recentCheckIns: string[]; // ISO dates
 };
 
+// Helper to build ISO dates relative to today
+const iso = (offsetDays: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+};
+
+export function daysRemaining(endIso: string, now = new Date()): number {
+  const end = new Date(endIso + "T23:59:59");
+  return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / 86_400_000));
+}
+
+export function subStatus(endIso: string): "active" | "expiring" | "expired" {
+  const d = daysRemaining(endIso);
+  if (d === 0) return "expired";
+  if (d <= 7) return "expiring";
+  return "active";
+}
+
+export function subUsedPct(startIso: string, endIso: string, now = new Date()): number {
+  const start = new Date(startIso).getTime();
+  const end = new Date(endIso).getTime();
+  const total = Math.max(1, end - start);
+  const used = Math.min(total, Math.max(0, now.getTime() - start));
+  return Math.round((used / total) * 100);
+}
+
+const mkHistory = (months: number, count: number): SubHistory[] =>
+  Array.from({ length: count }, (_, i) => ({
+    date: iso(-(i + 1) * months * 30),
+    plan: ["Basic", "Pro", "Elite"][i % 3],
+    months,
+  }));
+
+const mkCheckIns = (offsets: number[]) => offsets.map((o) => iso(-o));
+
 export const MEMBERS: Member[] = [
-  { id: "M-1041", name: "Liam Carter",      gender: "male",   lastCheckIn: "2026-05-23", streak: 4,  points: 480, plan: "Pro",   churnRisk: 12 },
-  { id: "M-1042", name: "Noah Bennett",     gender: "male",   lastCheckIn: "2026-05-08", streak: 0,  points: 220, plan: "Basic", churnRisk: 86 },
-  { id: "M-1043", name: "Ethan Walsh",      gender: "male",   lastCheckIn: "2026-05-22", streak: 9,  points: 1240, plan: "Elite", churnRisk: 6 },
-  { id: "M-1044", name: "Marcus Kim",       gender: "male",   lastCheckIn: "2026-05-09", streak: 0,  points: 90,  plan: "Basic", churnRisk: 78 },
-  { id: "M-1045", name: "Daniel Reyes",     gender: "male",   lastCheckIn: "2026-05-24", streak: 12, points: 1620, plan: "Elite", churnRisk: 3 },
-  { id: "F-2031", name: "Ava Mitchell",     gender: "female", lastCheckIn: "2026-05-23", streak: 6,  points: 760, plan: "Pro",   churnRisk: 10 },
-  { id: "F-2032", name: "Sophia Lin",       gender: "female", lastCheckIn: "2026-05-07", streak: 0,  points: 310, plan: "Basic", churnRisk: 82 },
-  { id: "F-2033", name: "Isabella Cruz",    gender: "female", lastCheckIn: "2026-05-21", streak: 5,  points: 540, plan: "Pro",   churnRisk: 18 },
-  { id: "F-2034", name: "Mia Andersen",     gender: "female", lastCheckIn: "2026-05-10", streak: 0,  points: 140, plan: "Basic", churnRisk: 74 },
-  { id: "F-2035", name: "Zara Okafor",      gender: "female", lastCheckIn: "2026-05-24", streak: 14, points: 1890, plan: "Elite", churnRisk: 2 },
+  { id: "M-1041", name: "Liam Carter",   cin: "AB123456", phone: "+212600111041", gender: "male",   lastCheckIn: iso(-2),  streak: 4,  points: 480,  plan: "Pro",   churnRisk: 12, subStart: iso(-75),  subEnd: iso(15),  subMonths: 3,  history: mkHistory(3, 2), recentCheckIns: mkCheckIns([2,4,6,9,12]) },
+  { id: "M-1042", name: "Noah Bennett",  cin: "AB234567", phone: "+212600111042", gender: "male",   lastCheckIn: iso(-17), streak: 0,  points: 220,  plan: "Basic", churnRisk: 86, subStart: iso(-28),  subEnd: iso(2),   subMonths: 1,  history: mkHistory(1, 3), recentCheckIns: mkCheckIns([17,25,40]) },
+  { id: "M-1043", name: "Ethan Walsh",   cin: "AB345678", phone: "+212600111043", gender: "male",   lastCheckIn: iso(-3),  streak: 9,  points: 1240, plan: "Elite", churnRisk: 6,  subStart: iso(-340), subEnd: iso(25),  subMonths: 12, history: mkHistory(12, 1), recentCheckIns: mkCheckIns([3,5,7,10,14]) },
+  { id: "M-1044", name: "Marcus Kim",    cin: "AB456789", phone: "+212600111044", gender: "male",   lastCheckIn: iso(-16), streak: 0,  points: 90,   plan: "Basic", churnRisk: 78, subStart: iso(-32),  subEnd: iso(-2),  subMonths: 1,  history: mkHistory(1, 2), recentCheckIns: mkCheckIns([16,22,30]) },
+  { id: "M-1045", name: "Daniel Reyes",  cin: "AB567890", phone: "+212600111045", gender: "male",   lastCheckIn: iso(-1),  streak: 12, points: 1620, plan: "Elite", churnRisk: 3,  subStart: iso(-150), subEnd: iso(40),  subMonths: 6,  history: mkHistory(6, 2), recentCheckIns: mkCheckIns([1,3,5,8,11]) },
+  { id: "F-2031", name: "Ava Mitchell",  cin: "CD123456", phone: "+212600222031", gender: "female", lastCheckIn: iso(-2),  streak: 6,  points: 760,  plan: "Pro",   churnRisk: 10, subStart: iso(-80),  subEnd: iso(10),  subMonths: 3,  history: mkHistory(3, 2), recentCheckIns: mkCheckIns([2,4,7,10,13]) },
+  { id: "F-2032", name: "Sophia Lin",    cin: "CD234567", phone: "+212600222032", gender: "female", lastCheckIn: iso(-18), streak: 0,  points: 310,  plan: "Basic", churnRisk: 82, subStart: iso(-29),  subEnd: iso(1),   subMonths: 1,  history: mkHistory(1, 4), recentCheckIns: mkCheckIns([18,26,33]) },
+  { id: "F-2033", name: "Isabella Cruz", cin: "CD345678", phone: "+212600222033", gender: "female", lastCheckIn: iso(-4),  streak: 5,  points: 540,  plan: "Pro",   churnRisk: 18, subStart: iso(-170), subEnd: iso(20),  subMonths: 6,  history: mkHistory(6, 2), recentCheckIns: mkCheckIns([4,6,9,12,15]) },
+  { id: "F-2034", name: "Mia Andersen",  cin: "CD456789", phone: "+212600222034", gender: "female", lastCheckIn: iso(-15), streak: 0,  points: 140,  plan: "Basic", churnRisk: 74, subStart: iso(-31),  subEnd: iso(0),   subMonths: 1,  history: mkHistory(1, 2), recentCheckIns: mkCheckIns([15,21,28]) },
+  { id: "F-2035", name: "Zara Okafor",   cin: "CD567890", phone: "+212600222035", gender: "female", lastCheckIn: iso(-1),  streak: 14, points: 1890, plan: "Elite", churnRisk: 2,  subStart: iso(-330), subEnd: iso(35),  subMonths: 12, history: mkHistory(12, 1), recentCheckIns: mkCheckIns([1,2,4,6,8,11]) },
 ];
 
 export const DEMO_MEMBER = MEMBERS[0]; // Liam Carter — male

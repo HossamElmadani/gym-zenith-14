@@ -1,15 +1,51 @@
 export type Gender = "male" | "female";
 
+export type SubHistory = { date: string; plan: string; months: number };
+
 export type Member = {
   id: string;
   name: string;
+  cin: string;
+  phone: string;
   gender: Gender;
   lastCheckIn: string; // ISO
   streak: number;
   points: number;
   plan: "Basic" | "Pro" | "Elite";
   churnRisk: number; // 0-100
+  subStart: string;   // ISO
+  subEnd: string;     // ISO
+  subMonths: number;
+  history: SubHistory[];
+  recentCheckIns: string[]; // ISO dates
 };
+
+// Helper to build ISO dates relative to today
+const iso = (offsetDays: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+};
+
+export function daysRemaining(endIso: string, now = new Date()): number {
+  const end = new Date(endIso + "T23:59:59");
+  return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / 86_400_000));
+}
+
+export function subStatus(endIso: string): "active" | "expiring" | "expired" {
+  const d = daysRemaining(endIso);
+  if (d === 0) return "expired";
+  if (d <= 7) return "expiring";
+  return "active";
+}
+
+export function subUsedPct(startIso: string, endIso: string, now = new Date()): number {
+  const start = new Date(startIso).getTime();
+  const end = new Date(endIso).getTime();
+  const total = Math.max(1, end - start);
+  const used = Math.min(total, Math.max(0, now.getTime() - start));
+  return Math.round((used / total) * 100);
+}
 
 export const MEMBERS: Member[] = [
   { id: "M-1041", name: "Liam Carter",      gender: "male",   lastCheckIn: "2026-05-23", streak: 4,  points: 480, plan: "Pro",   churnRisk: 12 },

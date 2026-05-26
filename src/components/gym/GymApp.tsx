@@ -110,6 +110,7 @@ export function GymApp() {
             <h1 className="text-xl md:text-2xl font-semibold tracking-tight">
               {view === "admin" ? "Operations Dashboard"
                 : view === "members" ? "Members Directory"
+                : view === "reception" ? "Reception Check-in Desk"
                 : view === "onboard" ? "New Member Onboarding"
                 : "My Dashboard"}
             </h1>
@@ -118,6 +119,8 @@ export function GymApp() {
                 ? "Adaptive insights filtered to today's gender schedule."
                 : view === "members"
                 ? "Retention pipeline, renewals and full member records."
+                : view === "reception"
+                ? "Scan, validate and grant access in real time."
                 : view === "onboard"
                 ? "Create a profile, assign a plan, and welcome them in."
                 : "Your training, rewards and bookings in one place."}
@@ -127,6 +130,7 @@ export function GymApp() {
 
         {view === "admin" && <AdminView todayMode={mode} dayLabel={label} />}
         {view === "members" && <MembersDirectory />}
+        {view === "reception" && <ReceptionDesk />}
         {view === "onboard" && <OnboardingView />}
         {view === "member" && <MemberView />}
       </main>

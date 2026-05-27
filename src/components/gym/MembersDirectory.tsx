@@ -397,7 +397,7 @@ function MemberSheet({ member, onClose, onFreeze, frozen }: {
               </section>
 
               {/* Quick actions */}
-              <section className="grid grid-cols-2 gap-2 sticky bottom-0 bg-card/95 backdrop-blur pt-2">
+              <section className="grid grid-cols-3 gap-2 sticky bottom-0 bg-card/95 backdrop-blur pt-2">
                 <Button
                   onClick={() =>
                     toast.success("Renewal started", { description: `${member.name} · ${member.plan}` })
@@ -408,12 +408,23 @@ function MemberSheet({ member, onClose, onFreeze, frozen }: {
                 </Button>
                 <Button
                   variant="outline"
+                  onClick={() => onFreeze(member)}
+                  className="gap-1.5 border-sky-500/40 text-sky-300 hover:bg-sky-500/10"
+                >
+                  <Snowflake className="size-4" /> Freeze
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => toast("Edit panel coming soon")}
                   className="gap-1.5"
                 >
                   <Edit3 className="size-4" /> Edit
                 </Button>
+                <div className="col-span-3">
+                  <WhatsAppButton member={member} tone="renew" size="sm" label="WhatsApp member" className="w-full" />
+                </div>
               </section>
+
             </div>
           </>
         )}

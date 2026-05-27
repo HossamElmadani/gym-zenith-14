@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScanLine, CheckCircle2, XCircle, AlertOctagon, Activity, Clock, User2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MEMBERS, dayName, daysRemaining, todayGender } from "@/lib/gym-data";
+import { WhatsAppButton } from "./WhatsAppButton";
 
 type Entry = {
   ts: string;

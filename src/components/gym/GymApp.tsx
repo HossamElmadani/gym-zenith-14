@@ -135,6 +135,8 @@ export function GymApp() {
         {view === "onboard" && <OnboardingView />}
         {view === "member" && <MemberView />}
       </main>
+
+      {view !== "member" && <QuickActionsFab onQuickOnboard={() => setView("onboard")} />}
     </div>
   );
 }

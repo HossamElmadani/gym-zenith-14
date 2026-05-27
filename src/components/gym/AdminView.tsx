@@ -9,6 +9,8 @@ import {
 } from "recharts";
 import { AlertTriangle, CheckCircle2, Flame, TrendingUp, Users, Zap, ArrowRight, ShieldAlert } from "lucide-react";
 import { MEMBERS, PEAK_HOURS, WAITLISTS, type Gender } from "@/lib/gym-data";
+import { WhatsAppButton } from "./WhatsAppButton";
+import { CashFlowWidget } from "./CashFlowWidget";
 
 type Props = { todayMode: "men" | "women" | "mixed"; dayLabel: string };
 
@@ -69,6 +71,12 @@ export function AdminView({ todayMode, dayLabel }: Props) {
           </Card>
         ))}
       </div>
+
+      {/* Cash flow */}
+      <div className="xl:col-span-3">
+        <CashFlowWidget />
+      </div>
+
 
       {/* Smart Check-in */}
       <Card className="glass rounded-2xl xl:col-span-1">
@@ -174,9 +182,7 @@ export function AdminView({ todayMode, dayLabel }: Props) {
                   <div className="text-sm font-semibold text-destructive">{m.churnRisk}%</div>
                   <div className="text-[10px] uppercase tracking-wide text-muted-foreground">risk</div>
                 </div>
-                <Button size="sm" variant="outline" className="border-destructive/40 hover:bg-destructive/20">
-                  Reach out
-                </Button>
+                <WhatsAppButton member={m} tone="churn" size="sm" label="Reach out" />
               </div>
             </div>
           ))}

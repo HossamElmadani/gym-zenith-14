@@ -15,13 +15,16 @@ import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
 import {
-  AlertTriangle, Calendar, CheckCircle2, Clock, Edit3, MessageCircle,
-  RefreshCw, Search, History as HistoryIcon,
+  AlertTriangle, Calendar, CheckCircle2, Clock, Edit3,
+  RefreshCw, Search, History as HistoryIcon, Snowflake,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   MEMBERS, daysRemaining, subStatus, subUsedPct, type Member,
 } from "@/lib/gym-data";
+import { WhatsAppButton } from "./WhatsAppButton";
+import { FreezeDialog } from "./FreezeDialog";
+import { gymStore, isFrozenToday, useGymStore } from "@/lib/gym-store";
 
 const initials = (n: string) => n.split(" ").map((x) => x[0]).slice(0, 2).join("");
 
@@ -31,38 +34,41 @@ const fmt = (iso: string) =>
 const fmtShort = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "short" });
 
-function statusMeta(s: ReturnType<typeof subStatus>) {
+function statusMeta(s: ReturnType<typeof subStatus> | "frozen") {
   if (s === "active")    return { label: "Active",        cls: "bg-success/15 text-success border-success/30" };
   if (s === "expiring")  return { label: "Expiring Soon", cls: "bg-warning/15 text-warning border-warning/30" };
+  if (s === "frozen")    return { label: "Frozen",        cls: "bg-sky-500/15 text-sky-300 border-sky-500/40" };
   return                        { label: "Expired",       cls: "bg-destructive/15 text-destructive border-destructive/30" };
 }
 
-const waMessage = (m: Member) =>
-  encodeURIComponent(
-    `Hi ${m.name}, this is PULSE Gym. Your ${m.plan} subscription expires on ${fmt(m.subEnd)}. Renew today to keep your streak alive! 💪`,
-  );
-const waLink = (m: Member) =>
-  `https://wa.me/${m.phone.replace(/\D/g, "")}?text=${waMessage(m)}`;
 
 export function MembersDirectory() {
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "expiring" | "expired">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "expiring" | "expired" | "frozen">("all");
   const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Member | null>(null);
+  const [freezeFor, setFreezeFor] = useState<Member | null>(null);
+  // Subscribe to store so freezes/cash updates re-render rows
+  const version = useGymStore((s) => s.v);
+
+  const effectiveStatus = (m: Member): "active" | "expiring" | "expired" | "frozen" =>
+    isFrozenToday(m.id) ? "frozen" : subStatus(m.subEnd);
 
   const expiringSoon = useMemo(
     () =>
       MEMBERS.filter((m) => {
+        if (isFrozenToday(m.id)) return false;
         const d = daysRemaining(m.subEnd);
         return d > 0 && d <= 7;
       }).sort((a, b) => daysRemaining(a.subEnd) - daysRemaining(b.subEnd)),
-    [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [version],
   );
 
   const rows = useMemo(() => {
     return MEMBERS.filter((m) => {
       if (genderFilter !== "all" && m.gender !== genderFilter) return false;
-      if (statusFilter !== "all" && subStatus(m.subEnd) !== statusFilter) return false;
+      if (statusFilter !== "all" && effectiveStatus(m) !== statusFilter) return false;
       if (query) {
         const q = query.toLowerCase();
         if (
@@ -74,7 +80,9 @@ export function MembersDirectory() {
       }
       return true;
     });
-  }, [statusFilter, genderFilter, query]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, genderFilter, query, version]);
+
 
   return (
     <div className="space-y-4">
@@ -114,19 +122,7 @@ export function MembersDirectory() {
                         {d} day{d === 1 ? "" : "s"} · {m.plan}
                       </div>
                     </div>
-                    <Button
-                      asChild
-                      size="icon"
-                      variant="ghost"
-                      className="hover:bg-success/15 hover:text-success"
-                      onClick={() =>
-                        toast.success("WhatsApp opened", { description: `Reminder ready for ${m.name}` })
-                      }
-                    >
-                      <a href={waLink(m)} target="_blank" rel="noreferrer" aria-label={`WhatsApp ${m.name}`}>
-                        <MessageCircle className="size-4" />
-                      </a>
-                    </Button>
+                    <WhatsAppButton member={m} tone="renew" />
                   </div>
                 );
               })}
@@ -161,6 +157,7 @@ export function MembersDirectory() {
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="expiring">Expiring Soon</SelectItem>
                 <SelectItem value="expired">Expired</SelectItem>
+                <SelectItem value="frozen">Frozen</SelectItem>
               </SelectContent>
             </Select>
             <Select value={genderFilter} onValueChange={(v) => setGenderFilter(v as typeof genderFilter)}>
@@ -184,19 +181,22 @@ export function MembersDirectory() {
                 <TableHead className="hidden sm:table-cell">Gender</TableHead>
                 <TableHead>Days Left</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-sm text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-10 text-sm text-muted-foreground">
                     No members match these filters.
                   </TableCell>
                 </TableRow>
               )}
               {rows.map((m) => {
+                const eff = effectiveStatus(m);
                 const d = daysRemaining(m.subEnd);
-                const s = statusMeta(subStatus(m.subEnd));
+                const s = statusMeta(eff);
+                const isAtRisk = eff === "expiring" || eff === "expired";
                 return (
                   <TableRow
                     key={m.id}
@@ -238,10 +238,34 @@ export function MembersDirectory() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm font-medium">
-                      {d === 0 ? <span className="text-destructive">—</span> : `${d}d`}
+                      {eff === "frozen" ? <span className="text-sky-300">paused</span>
+                        : d === 0 ? <span className="text-destructive">—</span>
+                        : `${d}d`}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`border ${s.cls}`}>{s.label}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {isAtRisk && <WhatsAppButton member={m} tone="renew" />}
+                        {eff === "frozen" ? (
+                          <Button
+                            size="sm" variant="outline"
+                            className="border-sky-500/40 text-sky-300 hover:bg-sky-500/10"
+                            onClick={() => { gymStore.unfreeze(m.id); toast.success(`${m.name} unfrozen`); }}
+                          >
+                            <Snowflake className="size-3.5" /> Unfreeze
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm" variant="ghost"
+                            className="text-sky-300 hover:bg-sky-500/10"
+                            onClick={() => setFreezeFor(m)}
+                          >
+                            <Snowflake className="size-3.5" /> Freeze
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -251,12 +275,28 @@ export function MembersDirectory() {
         </CardContent>
       </Card>
 
-      <MemberSheet member={selected} onClose={() => setSelected(null)} />
+      <MemberSheet
+        member={selected}
+        onClose={() => setSelected(null)}
+        onFreeze={(m) => setFreezeFor(m)}
+        frozen={selected ? isFrozenToday(selected.id) : null}
+      />
+      <FreezeDialog
+        member={freezeFor}
+        open={!!freezeFor}
+        onOpenChange={(o) => !o && setFreezeFor(null)}
+      />
     </div>
   );
 }
 
-function MemberSheet({ member, onClose }: { member: Member | null; onClose: () => void }) {
+
+function MemberSheet({ member, onClose, onFreeze, frozen }: {
+  member: Member | null;
+  onClose: () => void;
+  onFreeze: (m: Member) => void;
+  frozen: { from: string; to: string } | null;
+}) {
   return (
     <Sheet open={!!member} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="bg-card/95 backdrop-blur-xl border-l border-border/60 w-full sm:max-w-md overflow-y-auto">
@@ -284,9 +324,17 @@ function MemberSheet({ member, onClose }: { member: Member | null; onClose: () =
               </div>
             </SheetHeader>
 
+            {frozen && (
+              <div className="mt-4 rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm flex items-center gap-2">
+                <Snowflake className="size-4 text-sky-300" />
+                <span><span className="text-sky-300 font-medium">Frozen</span> · {frozen.from} → {frozen.to}</span>
+              </div>
+            )}
+
             <div className="mt-6 space-y-6">
               {/* Subscription progress */}
               <section className="rounded-xl border border-border/60 bg-background/40 p-4">
+
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span className="uppercase tracking-wide">Subscription used</span>
                   <span>{subUsedPct(member.subStart, member.subEnd)}%</span>
@@ -349,7 +397,7 @@ function MemberSheet({ member, onClose }: { member: Member | null; onClose: () =
               </section>
 
               {/* Quick actions */}
-              <section className="grid grid-cols-2 gap-2 sticky bottom-0 bg-card/95 backdrop-blur pt-2">
+              <section className="grid grid-cols-3 gap-2 sticky bottom-0 bg-card/95 backdrop-blur pt-2">
                 <Button
                   onClick={() =>
                     toast.success("Renewal started", { description: `${member.name} · ${member.plan}` })
@@ -360,12 +408,23 @@ function MemberSheet({ member, onClose }: { member: Member | null; onClose: () =
                 </Button>
                 <Button
                   variant="outline"
+                  onClick={() => onFreeze(member)}
+                  className="gap-1.5 border-sky-500/40 text-sky-300 hover:bg-sky-500/10"
+                >
+                  <Snowflake className="size-4" /> Freeze
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => toast("Edit panel coming soon")}
                   className="gap-1.5"
                 >
                   <Edit3 className="size-4" /> Edit
                 </Button>
+                <div className="col-span-3">
+                  <WhatsAppButton member={member} tone="renew" size="sm" label="WhatsApp member" className="w-full" />
+                </div>
               </section>
+
             </div>
           </>
         )}

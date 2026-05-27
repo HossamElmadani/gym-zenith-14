@@ -10,6 +10,7 @@ import { MemberView } from "./MemberView";
 import { OnboardingView } from "./OnboardingView";
 import { MembersDirectory } from "./MembersDirectory";
 import { ReceptionDesk } from "./ReceptionDesk";
+import { QuickActionsFab } from "./QuickActionsFab";
 import { dayName, todayGender } from "@/lib/gym-data";
 
 type View = "admin" | "members" | "member" | "onboard" | "reception";
@@ -134,6 +135,8 @@ export function GymApp() {
         {view === "onboard" && <OnboardingView />}
         {view === "member" && <MemberView />}
       </main>
+
+      {view !== "member" && <QuickActionsFab onQuickOnboard={() => setView("onboard")} />}
     </div>
   );
 }

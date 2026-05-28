@@ -37,6 +37,8 @@ export function ReceptionDesk() {
   const [value, setValue] = useState("");
   const [result, setResult] = useState<Result>({ kind: "idle" });
   const [log, setLog] = useState<Entry[]>([]);
+  const [doorPulse, setDoorPulse] = useState(0);
+  const [freezeFor, setFreezeFor] = useState<Member | null>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -65,6 +67,7 @@ export function ReceptionDesk() {
       r = { kind: "wrong-day", member };
     } else {
       r = { kind: "granted", member, days };
+      setDoorPulse((n) => n + 1);
       setLog((prev) =>
         [
           {

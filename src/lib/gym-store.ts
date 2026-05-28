@@ -11,20 +11,42 @@ export type CashEntry = {
   note?: string;
 };
 
+export type MaintenanceStatus = "open" | "in_progress" | "resolved";
+
 export type MaintenanceReport = {
   id: string;
   ts: string;
   machine: string;
   severity: "low" | "medium" | "high";
+  status: MaintenanceStatus;
   note?: string;
 };
 
 export type FreezeWindow = { from: string; to: string };
 
+export type ExpenseEntry = {
+  id: string;
+  ts: string;
+  category: string;
+  amount: number;
+  note?: string;
+};
+
+export type StaffMember = {
+  id: string;
+  name: string;
+  email: string;
+  role: "owner" | "receptionist";
+  createdAt: string;
+  active: boolean;
+};
+
 type State = {
   cash: CashEntry[];
+  expenses: ExpenseEntry[];
   maintenance: MaintenanceReport[];
   frozen: Record<string, FreezeWindow>;
+  staff: StaffMember[];
   v: number;
 };
 
@@ -36,8 +58,19 @@ const state: State = {
     { id: "c2", ts: new Date().toISOString(), memberId: "F-2033", memberName: "Isabella Cruz", amount: 400, method: "card", note: "Pro renewal" },
     { id: "c3", ts: new Date().toISOString(), memberId: "M-1041", memberName: "Liam Carter", amount: 250, method: "cash", note: "Drop-in" },
   ],
-  maintenance: [],
+  expenses: [
+    { id: "e1", ts: new Date().toISOString(), category: "Cleaning supplies", amount: 120, note: "Weekly restock" },
+  ],
+  maintenance: [
+    { id: "t1", ts: new Date(Date.now() - 86_400_000).toISOString(), machine: "Treadmill #3", severity: "high", status: "open", note: "Belt slipping under load" },
+    { id: "t2", ts: new Date(Date.now() - 2 * 86_400_000).toISOString(), machine: "Cable cross", severity: "medium", status: "in_progress", note: "Pulley squeaks" },
+    { id: "t3", ts: new Date(Date.now() - 5 * 86_400_000).toISOString(), machine: "Squat rack #1", severity: "low", status: "resolved", note: "Replaced J-cups" },
+  ],
   frozen: {},
+  staff: [
+    { id: "s1", name: "Alex Owner",        email: "admin@gym.com",     role: "owner",        createdAt: new Date().toISOString(), active: true },
+    { id: "s2", name: "Riley Front-Desk",  email: "reception@gym.com", role: "receptionist", createdAt: new Date().toISOString(), active: true },
+  ],
   v: 0,
 };
 

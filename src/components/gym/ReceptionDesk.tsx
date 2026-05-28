@@ -212,10 +212,14 @@ function ResultCard({
   result,
   mode,
   label,
+  doorPulse,
+  onFreeze,
 }: {
   result: Result;
   mode: "men" | "women" | "mixed";
   label: string;
+  doorPulse: number;
+  onFreeze: (m: Member) => void;
 }) {
   if (result.kind === "idle") {
     return (

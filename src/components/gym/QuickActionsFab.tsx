@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, UserPlus, Wallet, Wrench, X } from "lucide-react";
+import { Plus, Receipt, UserPlus, Wallet, Wrench, X } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -15,19 +15,23 @@ import { toast } from "sonner";
 import { gymStore } from "@/lib/gym-store";
 import { MEMBERS } from "@/lib/gym-data";
 
-type Modal = null | "cash" | "machine";
+type Modal = null | "cash" | "machine" | "expense";
 
-export function QuickActionsFab({ onQuickOnboard }: { onQuickOnboard: () => void }) {
+export function QuickActionsFab({
+  onQuickOnboard,
+  role = "owner",
+}: { onQuickOnboard: () => void; role?: "owner" | "receptionist" }) {
   const [open, setOpen] = useState(false);
   const [modal, setModal] = useState<Modal>(null);
 
-  const actions = [
+  const allActions = [
     {
       key: "onboard",
       label: "Quick Onboard",
       icon: UserPlus,
       tone: "bg-primary text-primary-foreground",
       onClick: () => { onQuickOnboard(); setOpen(false); },
+      roles: ["owner", "receptionist"] as const,
     },
     {
       key: "cash",
@@ -35,6 +39,15 @@ export function QuickActionsFab({ onQuickOnboard }: { onQuickOnboard: () => void
       icon: Wallet,
       tone: "bg-success text-black",
       onClick: () => { setModal("cash"); setOpen(false); },
+      roles: ["owner", "receptionist"] as const,
+    },
+    {
+      key: "expense",
+      label: "Log Expense",
+      icon: Receipt,
+      tone: "bg-destructive text-destructive-foreground",
+      onClick: () => { setModal("expense"); setOpen(false); },
+      roles: ["owner"] as const,
     },
     {
       key: "machine",
@@ -42,8 +55,10 @@ export function QuickActionsFab({ onQuickOnboard }: { onQuickOnboard: () => void
       icon: Wrench,
       tone: "bg-warning text-black",
       onClick: () => { setModal("machine"); setOpen(false); },
+      roles: ["owner", "receptionist"] as const,
     },
   ];
+  const actions = allActions.filter((a) => (a.roles as readonly string[]).includes(role));
 
   return (
     <>
@@ -82,6 +97,7 @@ export function QuickActionsFab({ onQuickOnboard }: { onQuickOnboard: () => void
 
       <CashDialog open={modal === "cash"} onOpenChange={(o) => !o && setModal(null)} />
       <MachineDialog open={modal === "machine"} onOpenChange={(o) => !o && setModal(null)} />
+      <ExpenseDialog open={modal === "expense"} onOpenChange={(o) => !o && setModal(null)} />
     </>
   );
 }

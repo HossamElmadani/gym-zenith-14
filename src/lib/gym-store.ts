@@ -178,6 +178,13 @@ export function cashCollectedToday(): number {
     .reduce((sum, c) => sum + c.amount, 0);
 }
 
+export function expensesToday(): number {
+  const t = todayISO();
+  return state.expenses
+    .filter((e) => e.ts.slice(0, 10) === t)
+    .reduce((sum, e) => sum + e.amount, 0);
+}
+
 // Plan pricing in MAD (demo)
 export const PLAN_PRICES: Record<Member["plan"], number> = {
   Basic: 250,

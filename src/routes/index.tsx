@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { GymApp } from "@/components/gym/GymApp";
+import { AuthProvider } from "@/lib/auth";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,5 +15,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  return <GymApp />;
+  return (
+    <AuthProvider>
+      <GymApp />
+    </AuthProvider>
+  );
 }

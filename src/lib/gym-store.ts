@@ -11,20 +11,42 @@ export type CashEntry = {
   note?: string;
 };
 
+export type MaintenanceStatus = "open" | "in_progress" | "resolved";
+
 export type MaintenanceReport = {
   id: string;
   ts: string;
   machine: string;
   severity: "low" | "medium" | "high";
+  status: MaintenanceStatus;
   note?: string;
 };
 
 export type FreezeWindow = { from: string; to: string };
 
+export type ExpenseEntry = {
+  id: string;
+  ts: string;
+  category: string;
+  amount: number;
+  note?: string;
+};
+
+export type StaffMember = {
+  id: string;
+  name: string;
+  email: string;
+  role: "owner" | "receptionist";
+  createdAt: string;
+  active: boolean;
+};
+
 type State = {
   cash: CashEntry[];
+  expenses: ExpenseEntry[];
   maintenance: MaintenanceReport[];
   frozen: Record<string, FreezeWindow>;
+  staff: StaffMember[];
   v: number;
 };
 
@@ -36,8 +58,19 @@ const state: State = {
     { id: "c2", ts: new Date().toISOString(), memberId: "F-2033", memberName: "Isabella Cruz", amount: 400, method: "card", note: "Pro renewal" },
     { id: "c3", ts: new Date().toISOString(), memberId: "M-1041", memberName: "Liam Carter", amount: 250, method: "cash", note: "Drop-in" },
   ],
-  maintenance: [],
+  expenses: [
+    { id: "e1", ts: new Date().toISOString(), category: "Cleaning supplies", amount: 120, note: "Weekly restock" },
+  ],
+  maintenance: [
+    { id: "t1", ts: new Date(Date.now() - 86_400_000).toISOString(), machine: "Treadmill #3", severity: "high", status: "open", note: "Belt slipping under load" },
+    { id: "t2", ts: new Date(Date.now() - 2 * 86_400_000).toISOString(), machine: "Cable cross", severity: "medium", status: "in_progress", note: "Pulley squeaks" },
+    { id: "t3", ts: new Date(Date.now() - 5 * 86_400_000).toISOString(), machine: "Squat rack #1", severity: "low", status: "resolved", note: "Replaced J-cups" },
+  ],
   frozen: {},
+  staff: [
+    { id: "s1", name: "Alex Owner",        email: "admin@gym.com",     role: "owner",        createdAt: new Date().toISOString(), active: true },
+    { id: "s2", name: "Riley Front-Desk",  email: "reception@gym.com", role: "receptionist", createdAt: new Date().toISOString(), active: true },
+  ],
   v: 0,
 };
 
@@ -70,11 +103,42 @@ export const gymStore = {
     emit();
   },
 
-  reportMaintenance(entry: Omit<MaintenanceReport, "id" | "ts">) {
+  reportMaintenance(entry: Omit<MaintenanceReport, "id" | "ts" | "status"> & { status?: MaintenanceStatus }) {
     state.maintenance = [
-      { id: crypto.randomUUID(), ts: new Date().toISOString(), ...entry },
+      { id: crypto.randomUUID(), ts: new Date().toISOString(), status: entry.status ?? "open", ...entry },
       ...state.maintenance,
     ];
+    emit();
+  },
+
+  setMaintenanceStatus(id: string, status: MaintenanceStatus) {
+    state.maintenance = state.maintenance.map((t) => (t.id === id ? { ...t, status } : t));
+    emit();
+  },
+
+  logExpense(entry: Omit<ExpenseEntry, "id" | "ts"> & { ts?: string }) {
+    state.expenses = [
+      { id: crypto.randomUUID(), ts: entry.ts ?? new Date().toISOString(), ...entry },
+      ...state.expenses,
+    ];
+    emit();
+  },
+
+  addStaff(entry: Omit<StaffMember, "id" | "createdAt" | "active"> & { active?: boolean }) {
+    state.staff = [
+      { id: crypto.randomUUID(), createdAt: new Date().toISOString(), active: entry.active ?? true, ...entry },
+      ...state.staff,
+    ];
+    emit();
+  },
+
+  removeStaff(id: string) {
+    state.staff = state.staff.filter((s) => s.id !== id);
+    emit();
+  },
+
+  toggleStaffActive(id: string) {
+    state.staff = state.staff.map((s) => (s.id === id ? { ...s, active: !s.active } : s));
     emit();
   },
 
@@ -112,6 +176,13 @@ export function cashCollectedToday(): number {
   return state.cash
     .filter((c) => c.ts.slice(0, 10) === t)
     .reduce((sum, c) => sum + c.amount, 0);
+}
+
+export function expensesToday(): number {
+  const t = todayISO();
+  return state.expenses
+    .filter((e) => e.ts.slice(0, 10) === t)
+    .reduce((sum, e) => sum + e.amount, 0);
 }
 
 // Plan pricing in MAD (demo)

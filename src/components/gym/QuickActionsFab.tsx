@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, UserPlus, Wallet, Wrench, X } from "lucide-react";
+import { Plus, Receipt, UserPlus, Wallet, Wrench, X } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -15,19 +15,23 @@ import { toast } from "sonner";
 import { gymStore } from "@/lib/gym-store";
 import { MEMBERS } from "@/lib/gym-data";
 
-type Modal = null | "cash" | "machine";
+type Modal = null | "cash" | "machine" | "expense";
 
-export function QuickActionsFab({ onQuickOnboard }: { onQuickOnboard: () => void }) {
+export function QuickActionsFab({
+  onQuickOnboard,
+  role = "owner",
+}: { onQuickOnboard: () => void; role?: "owner" | "receptionist" }) {
   const [open, setOpen] = useState(false);
   const [modal, setModal] = useState<Modal>(null);
 
-  const actions = [
+  const allActions = [
     {
       key: "onboard",
       label: "Quick Onboard",
       icon: UserPlus,
       tone: "bg-primary text-primary-foreground",
       onClick: () => { onQuickOnboard(); setOpen(false); },
+      roles: ["owner", "receptionist"] as const,
     },
     {
       key: "cash",
@@ -35,6 +39,15 @@ export function QuickActionsFab({ onQuickOnboard }: { onQuickOnboard: () => void
       icon: Wallet,
       tone: "bg-success text-black",
       onClick: () => { setModal("cash"); setOpen(false); },
+      roles: ["owner", "receptionist"] as const,
+    },
+    {
+      key: "expense",
+      label: "Log Expense",
+      icon: Receipt,
+      tone: "bg-destructive text-destructive-foreground",
+      onClick: () => { setModal("expense"); setOpen(false); },
+      roles: ["owner"] as const,
     },
     {
       key: "machine",
@@ -42,8 +55,10 @@ export function QuickActionsFab({ onQuickOnboard }: { onQuickOnboard: () => void
       icon: Wrench,
       tone: "bg-warning text-black",
       onClick: () => { setModal("machine"); setOpen(false); },
+      roles: ["owner", "receptionist"] as const,
     },
   ];
+  const actions = allActions.filter((a) => (a.roles as readonly string[]).includes(role));
 
   return (
     <>
@@ -82,6 +97,7 @@ export function QuickActionsFab({ onQuickOnboard }: { onQuickOnboard: () => void
 
       <CashDialog open={modal === "cash"} onOpenChange={(o) => !o && setModal(null)} />
       <MachineDialog open={modal === "machine"} onOpenChange={(o) => !o && setModal(null)} />
+      <ExpenseDialog open={modal === "expense"} onOpenChange={(o) => !o && setModal(null)} />
     </>
   );
 }
@@ -219,6 +235,68 @@ function MachineDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={submit} className="bg-warning text-black hover:bg-warning/90">
             <Wrench className="size-4" /> Send ticket
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("Cleaning supplies");
+  const [note, setNote] = useState("");
+
+  const submit = () => {
+    const a = parseFloat(amount);
+    if (!a || a <= 0) return toast.error("Enter a valid amount");
+    if (!category.trim()) return toast.error("Pick a category");
+    gymStore.logExpense({ amount: a, category: category.trim(), note: note || undefined });
+    toast.success(`Logged expense ${a} MAD`, { description: category });
+    setAmount(""); setNote(""); setCategory("Cleaning supplies");
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="glass border-border/60 sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <span className="size-8 rounded-lg bg-destructive/20 text-destructive grid place-items-center"><Receipt className="size-4" /></span>
+            Log petty cash expense
+          </DialogTitle>
+          <DialogDescription>Tracks outflows so Net Cash stays accurate.</DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="space-y-1.5 col-span-2">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Amount (MAD)</Label>
+            <Input type="number" inputMode="decimal" autoFocus placeholder="e.g. 120" value={amount} onChange={(e) => setAmount(e.target.value)} className="bg-background/50 text-lg font-semibold" />
+          </div>
+          <div className="space-y-1.5 col-span-2">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Cleaning supplies">Cleaning supplies</SelectItem>
+                <SelectItem value="Equipment repair">Equipment repair</SelectItem>
+                <SelectItem value="Utilities">Utilities</SelectItem>
+                <SelectItem value="Staff payroll">Staff payroll</SelectItem>
+                <SelectItem value="Marketing">Marketing</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5 col-span-2">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Note</Label>
+            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional detail" className="bg-background/50" />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={submit} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <Receipt className="size-4" /> Save expense
           </Button>
         </DialogFooter>
       </DialogContent>

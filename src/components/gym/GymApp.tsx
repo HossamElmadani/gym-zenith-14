@@ -1,37 +1,75 @@
 import { useMemo, useState } from "react";
-import { Bell, Search, Users, User, UserPlus, BookUser, ScanLine } from "lucide-react";
+import { Bell, BookUser, LogOut, ScanLine, Shield, UserPlus, Users, Wrench } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Search } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { GymSidebar } from "./Sidebar";
 import { AdminView } from "./AdminView";
-import { MemberView } from "./MemberView";
 import { OnboardingView } from "./OnboardingView";
 import { MembersDirectory } from "./MembersDirectory";
 import { ReceptionDesk } from "./ReceptionDesk";
 import { QuickActionsFab } from "./QuickActionsFab";
+import { LoginScreen } from "./LoginScreen";
+import { StaffManagement } from "./StaffManagement";
+import { MaintenanceBoard } from "./MaintenanceBoard";
+import { AccessDenied } from "./AccessDenied";
+import { useAuth } from "@/lib/auth";
 import { dayName, todayGender } from "@/lib/gym-data";
 
-type View = "admin" | "members" | "member" | "onboard" | "reception";
+type View = "admin" | "members" | "onboard" | "reception" | "staff" | "maintenance";
+
+const TABS: { key: View; label: string; icon: typeof Users; roles: Array<"owner" | "receptionist"> }[] = [
+  { key: "admin",       label: "Dashboard",   icon: Users,       roles: ["owner"] },
+  { key: "members",     label: "Members",     icon: BookUser,    roles: ["owner", "receptionist"] },
+  { key: "reception",   label: "Reception",   icon: ScanLine,    roles: ["owner", "receptionist"] },
+  { key: "onboard",     label: "Onboard",     icon: UserPlus,    roles: ["owner", "receptionist"] },
+  { key: "maintenance", label: "Maintenance", icon: Wrench,      roles: ["owner"] },
+  { key: "staff",       label: "Staff",       icon: Shield,      roles: ["owner"] },
+];
 
 export function GymApp() {
-  const [view, setView] = useState<View>("admin");
+  const { user, logout } = useAuth();
+
+  if (!user) return <LoginScreen />;
+
+  return <Workspace />;
+}
+
+function Workspace() {
+  const { user, logout } = useAuth();
+  const role = user!.role;
+  const initialView: View = role === "receptionist" ? "reception" : "admin";
+  const [view, setView] = useState<View>(initialView);
   const today = useMemo(() => new Date(), []);
   const mode = todayGender(today);
   const label = dayName(today);
 
-  const themeClass =
-    mode === "women" ? "theme-womens" : mode === "mixed" ? "theme-neutral" : "";
-
+  const themeClass = mode === "women" ? "theme-womens" : mode === "mixed" ? "theme-neutral" : "";
   const accentLabel =
     mode === "men" ? "Men's day · Mon/Wed/Fri"
       : mode === "women" ? "Women's day · Tue/Thu/Sat"
       : "Mixed day · Sunday";
 
+  const visibleTabs = TABS.filter((t) => t.roles.includes(role));
+  const allowed = visibleTabs.some((t) => t.key === view);
+
+  const headings: Record<View, { title: string; sub: string }> = {
+    admin:       { title: "Operations Dashboard",     sub: "Adaptive insights filtered to today's gender schedule." },
+    members:     { title: "Members Directory",        sub: "Retention pipeline, renewals and full member records." },
+    reception:   { title: "Reception Check-in Desk",  sub: "Scan, validate and grant access in real time." },
+    onboard:     { title: "New Member Onboarding",    sub: "Create a profile, assign a plan, and welcome them in." },
+    maintenance: { title: "Maintenance Tickets",      sub: "Track equipment issues from open to resolved." },
+    staff:       { title: "Staff & Access",           sub: "Manage who can sign in and what they can do." },
+  };
+
   return (
     <div className={cn("min-h-screen flex", themeClass)}>
-      <GymSidebar view={view === "member" ? "member" : "admin"} accentLabel={accentLabel} />
+      <GymSidebar view="admin" accentLabel={accentLabel} />
 
       <main className="flex-1 p-3 md:p-5 space-y-4">
         {/* Top bar */}
@@ -47,96 +85,74 @@ export function GymApp() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            {/* View toggle */}
-            <div className="flex items-center rounded-xl border border-border/60 bg-card/40 p-1">
-              <button
-                onClick={() => setView("admin")}
-                className={cn(
-                  "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all",
-                  view === "admin" ? "bg-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Users className="size-3.5" /> Admin
-              </button>
-              <button
-                onClick={() => setView("members")}
-                className={cn(
-                  "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all",
-                  view === "members" ? "bg-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <BookUser className="size-3.5" /> Members
-              </button>
-              <button
-                onClick={() => setView("reception")}
-                className={cn(
-                  "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all",
-                  view === "reception" ? "bg-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <ScanLine className="size-3.5" /> Reception
-              </button>
-              <button
-                onClick={() => setView("onboard")}
-                className={cn(
-                  "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all",
-                  view === "onboard" ? "bg-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <UserPlus className="size-3.5" /> Onboard
-              </button>
-              <button
-                onClick={() => setView("member")}
-                className={cn(
-                  "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all",
-                  view === "member" ? "bg-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <User className="size-3.5" /> Member
-              </button>
+            <div className="flex items-center rounded-xl border border-border/60 bg-card/40 p-1 overflow-x-auto">
+              {visibleTabs.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setView(t.key)}
+                  className={cn(
+                    "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all whitespace-nowrap",
+                    view === t.key ? "bg-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <t.icon className="size-3.5" /> {t.label}
+                </button>
+              ))}
             </div>
 
             <Button size="icon" variant="ghost" className="hover:bg-accent">
               <Bell className="size-4" />
             </Button>
-            <div className="size-9 rounded-full bg-gradient-to-br from-primary to-primary/40 grid place-items-center text-xs font-semibold text-primary-foreground">
-              {view === "member" ? "LC" : "AD"}
-            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 border border-border/60 bg-card/40 hover:bg-accent transition">
+                  <div className="size-8 rounded-full bg-gradient-to-br from-primary to-primary/40 grid place-items-center text-xs font-semibold text-primary-foreground">
+                    {user!.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                  </div>
+                  <div className="hidden sm:block text-left">
+                    <div className="text-xs font-medium leading-tight">{user!.name}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{role}</div>
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="glass border-border/60 w-56">
+                <DropdownMenuLabel className="space-y-0.5">
+                  <div className="text-sm">{user!.name}</div>
+                  <div className="text-[11px] text-muted-foreground font-normal">{user!.email}</div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive focus:bg-destructive/15">
+                  <LogOut className="size-4" /> Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
         {/* Heading */}
         <div className="px-1 flex items-end justify-between">
           <div>
-            <h1 className="text-xl md:text-2xl font-semibold tracking-tight">
-              {view === "admin" ? "Operations Dashboard"
-                : view === "members" ? "Members Directory"
-                : view === "reception" ? "Reception Check-in Desk"
-                : view === "onboard" ? "New Member Onboarding"
-                : "My Dashboard"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {view === "admin"
-                ? "Adaptive insights filtered to today's gender schedule."
-                : view === "members"
-                ? "Retention pipeline, renewals and full member records."
-                : view === "reception"
-                ? "Scan, validate and grant access in real time."
-                : view === "onboard"
-                ? "Create a profile, assign a plan, and welcome them in."
-                : "Your training, rewards and bookings in one place."}
-            </p>
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight">{headings[view].title}</h1>
+            <p className="text-sm text-muted-foreground">{headings[view].sub}</p>
           </div>
         </div>
 
-        {view === "admin" && <AdminView todayMode={mode} dayLabel={label} />}
-        {view === "members" && <MembersDirectory />}
-        {view === "reception" && <ReceptionDesk />}
-        {view === "onboard" && <OnboardingView />}
-        {view === "member" && <MemberView />}
+        {!allowed ? (
+          <AccessDenied onBack={() => setView(initialView)} />
+        ) : (
+          <>
+            {view === "admin"       && <AdminView todayMode={mode} dayLabel={label} />}
+            {view === "members"     && <MembersDirectory />}
+            {view === "reception"   && <ReceptionDesk />}
+            {view === "onboard"     && <OnboardingView />}
+            {view === "maintenance" && <MaintenanceBoard />}
+            {view === "staff"       && <StaffManagement />}
+          </>
+        )}
       </main>
 
-      {view !== "member" && <QuickActionsFab onQuickOnboard={() => setView("onboard")} />}
+      <QuickActionsFab onQuickOnboard={() => setView("onboard")} role={role} />
     </div>
   );
 }

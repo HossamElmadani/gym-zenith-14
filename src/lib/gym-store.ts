@@ -103,11 +103,42 @@ export const gymStore = {
     emit();
   },
 
-  reportMaintenance(entry: Omit<MaintenanceReport, "id" | "ts">) {
+  reportMaintenance(entry: Omit<MaintenanceReport, "id" | "ts" | "status"> & { status?: MaintenanceStatus }) {
     state.maintenance = [
-      { id: crypto.randomUUID(), ts: new Date().toISOString(), ...entry },
+      { id: crypto.randomUUID(), ts: new Date().toISOString(), status: entry.status ?? "open", ...entry },
       ...state.maintenance,
     ];
+    emit();
+  },
+
+  setMaintenanceStatus(id: string, status: MaintenanceStatus) {
+    state.maintenance = state.maintenance.map((t) => (t.id === id ? { ...t, status } : t));
+    emit();
+  },
+
+  logExpense(entry: Omit<ExpenseEntry, "id" | "ts"> & { ts?: string }) {
+    state.expenses = [
+      { id: crypto.randomUUID(), ts: entry.ts ?? new Date().toISOString(), ...entry },
+      ...state.expenses,
+    ];
+    emit();
+  },
+
+  addStaff(entry: Omit<StaffMember, "id" | "createdAt" | "active"> & { active?: boolean }) {
+    state.staff = [
+      { id: crypto.randomUUID(), createdAt: new Date().toISOString(), active: entry.active ?? true, ...entry },
+      ...state.staff,
+    ];
+    emit();
+  },
+
+  removeStaff(id: string) {
+    state.staff = state.staff.filter((s) => s.id !== id);
+    emit();
+  },
+
+  toggleStaffActive(id: string) {
+    state.staff = state.staff.map((s) => (s.id === id ? { ...s, active: !s.active } : s));
     emit();
   },
 

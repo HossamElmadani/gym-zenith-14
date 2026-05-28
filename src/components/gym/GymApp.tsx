@@ -33,7 +33,7 @@ const TABS: { key: View; label: string; icon: typeof Users; roles: Array<"owner"
 ];
 
 export function GymApp() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   if (!user) return <LoginScreen />;
 

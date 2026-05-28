@@ -241,3 +241,65 @@ function MachineDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
     </Dialog>
   );
 }
+
+function ExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("Cleaning supplies");
+  const [note, setNote] = useState("");
+
+  const submit = () => {
+    const a = parseFloat(amount);
+    if (!a || a <= 0) return toast.error("Enter a valid amount");
+    if (!category.trim()) return toast.error("Pick a category");
+    gymStore.logExpense({ amount: a, category: category.trim(), note: note || undefined });
+    toast.success(`Logged expense ${a} MAD`, { description: category });
+    setAmount(""); setNote(""); setCategory("Cleaning supplies");
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="glass border-border/60 sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <span className="size-8 rounded-lg bg-destructive/20 text-destructive grid place-items-center"><Receipt className="size-4" /></span>
+            Log petty cash expense
+          </DialogTitle>
+          <DialogDescription>Tracks outflows so Net Cash stays accurate.</DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="space-y-1.5 col-span-2">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Amount (MAD)</Label>
+            <Input type="number" inputMode="decimal" autoFocus placeholder="e.g. 120" value={amount} onChange={(e) => setAmount(e.target.value)} className="bg-background/50 text-lg font-semibold" />
+          </div>
+          <div className="space-y-1.5 col-span-2">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Cleaning supplies">Cleaning supplies</SelectItem>
+                <SelectItem value="Equipment repair">Equipment repair</SelectItem>
+                <SelectItem value="Utilities">Utilities</SelectItem>
+                <SelectItem value="Staff payroll">Staff payroll</SelectItem>
+                <SelectItem value="Marketing">Marketing</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5 col-span-2">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Note</Label>
+            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional detail" className="bg-background/50" />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={submit} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <Receipt className="size-4" /> Save expense
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

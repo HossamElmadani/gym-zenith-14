@@ -282,7 +282,7 @@ function ResultCard({
         : `${m.name} is registered as ${m.gender === "male" ? "Male" : "Female"}. ${label} is reserved for ${mode === "men" ? "Men" : "Women"}.`;
 
   return (
-    <Card className={cn("glass rounded-2xl border-2", tone)}>
+    <Card className={cn("glass rounded-2xl border-2 overflow-hidden", tone)}>
       <CardContent className="p-8 flex flex-col md:flex-row items-center gap-6">
         <Avatar className="size-24 ring-2 ring-border/60">
           <AvatarFallback
@@ -307,9 +307,45 @@ function ResultCard({
           <div className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">{m.name}</div>
           <div className="mt-1 text-lg font-medium">{headline}</div>
           <div className="text-sm text-muted-foreground mt-1">{subline}</div>
+
+          {result.kind === "granted" && (
+            <div
+              key={doorPulse}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl border border-success/50 bg-success/15 px-3 py-2 animate-in fade-in zoom-in-95 duration-500"
+            >
+              <span className="relative flex size-2.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-success opacity-75 animate-ping" />
+                <span className="relative inline-flex rounded-full size-2.5 bg-success" />
+              </span>
+              <Zap className="size-4 text-success" />
+              <div className="text-left">
+                <div className="text-sm font-semibold text-success">Door Unlocked</div>
+                <div className="text-[11px] text-muted-foreground">Webhook fired to Turnstile API</div>
+              </div>
+            </div>
+          )}
+
+          {(result.kind === "expired" || result.kind === "wrong-day") && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <WhatsAppButton
+                member={m}
+                tone={result.kind === "expired" ? "renew" : "denied"}
+                size="sm"
+                label={result.kind === "expired" ? "WhatsApp renewal link" : "Notify member"}
+              />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => onFreeze(m)}
+                className="gap-1.5 bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 border border-sky-500/30"
+              >
+                <Snowflake className="size-4" /> Freeze account
+              </Button>
+            </div>
+          )}
         </div>
 
-        <div className={cn("size-20 rounded-2xl grid place-items-center", iconTone)}>
+        <div className={cn("size-20 rounded-2xl grid place-items-center shrink-0", iconTone)}>
           <Icon className="size-10" />
         </div>
       </CardContent>

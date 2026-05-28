@@ -136,8 +136,16 @@ export function ReceptionDesk() {
           </CardContent>
         </Card>
 
-        <ResultCard result={result} mode={mode} label={label} />
+        <ResultCard
+          result={result}
+          mode={mode}
+          label={label}
+          doorPulse={doorPulse}
+          onFreeze={(m) => setFreezeFor(m)}
+        />
       </div>
+
+      <FreezeDialog member={freezeFor} open={!!freezeFor} onOpenChange={(o) => !o && setFreezeFor(null)} />
 
       {/* Live traffic */}
       <Card className="glass rounded-2xl xl:col-span-1">

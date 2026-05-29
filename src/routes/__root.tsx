@@ -73,14 +73,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "PULSE CRM" },
+      { name: "description", content: "FlexFlow Pro is a modern Gym CRM and Member Portal web app with a gender-aware system." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "PULSE CRM" },
+      { property: "og:description", content: "FlexFlow Pro is a modern Gym CRM and Member Portal web app with a gender-aware system." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "PULSE CRM" },
+      { name: "twitter:description", content: "FlexFlow Pro is a modern Gym CRM and Member Portal web app with a gender-aware system." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a7add9f1-8f86-422d-baa4-a38a19e50bf0/id-preview-bb471325--c0c15d57-fd9c-440b-9e5a-d15d11ac8dfc.lovable.app-1780052545618.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a7add9f1-8f86-422d-baa4-a38a19e50bf0/id-preview-bb471325--c0c15d57-fd9c-440b-9e5a-d15d11ac8dfc.lovable.app-1780052545618.png" },
     ],
     links: [
       {

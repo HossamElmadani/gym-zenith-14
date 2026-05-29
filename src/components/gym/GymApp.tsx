@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bell, BookUser, LogOut, ScanLine, Shield, UserPlus, Users, Wrench } from "lucide-react";
+import { Bell, BookUser, LogOut, ScanLine, Shield, UserPlus, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,27 +16,23 @@ import { ReceptionDesk } from "./ReceptionDesk";
 import { QuickActionsFab } from "./QuickActionsFab";
 import { LoginScreen } from "./LoginScreen";
 import { StaffManagement } from "./StaffManagement";
-import { MaintenanceBoard } from "./MaintenanceBoard";
 import { AccessDenied } from "./AccessDenied";
 import { useAuth } from "@/lib/auth";
 import { dayName, todayGender } from "@/lib/gym-data";
 
-type View = "admin" | "members" | "onboard" | "reception" | "staff" | "maintenance";
+type View = "admin" | "members" | "onboard" | "reception" | "staff";
 
 const TABS: { key: View; label: string; icon: typeof Users; roles: Array<"owner" | "receptionist"> }[] = [
-  { key: "admin",       label: "Dashboard",   icon: Users,       roles: ["owner"] },
-  { key: "members",     label: "Members",     icon: BookUser,    roles: ["owner", "receptionist"] },
-  { key: "reception",   label: "Reception",   icon: ScanLine,    roles: ["owner", "receptionist"] },
-  { key: "onboard",     label: "Onboard",     icon: UserPlus,    roles: ["owner", "receptionist"] },
-  { key: "maintenance", label: "Maintenance", icon: Wrench,      roles: ["owner"] },
-  { key: "staff",       label: "Staff",       icon: Shield,      roles: ["owner"] },
+  { key: "admin",     label: "Dashboard", icon: Users,    roles: ["owner"] },
+  { key: "members",   label: "Members",   icon: BookUser, roles: ["owner", "receptionist"] },
+  { key: "reception", label: "Reception", icon: ScanLine, roles: ["owner", "receptionist"] },
+  { key: "onboard",   label: "Onboard",   icon: UserPlus, roles: ["owner", "receptionist"] },
+  { key: "staff",     label: "Staff",     icon: Shield,   roles: ["owner"] },
 ];
 
 export function GymApp() {
   const { user } = useAuth();
-
   if (!user) return <LoginScreen />;
-
   return <Workspace />;
 }
 
@@ -59,17 +55,16 @@ function Workspace() {
   const allowed = visibleTabs.some((t) => t.key === view);
 
   const headings: Record<View, { title: string; sub: string }> = {
-    admin:       { title: "Operations Dashboard",     sub: "Adaptive insights filtered to today's gender schedule." },
-    members:     { title: "Members Directory",        sub: "Retention pipeline, renewals and full member records." },
-    reception:   { title: "Reception Check-in Desk",  sub: "Scan, validate and grant access in real time." },
-    onboard:     { title: "New Member Onboarding",    sub: "Create a profile, assign a plan, and welcome them in." },
-    maintenance: { title: "Maintenance Tickets",      sub: "Track equipment issues from open to resolved." },
-    staff:       { title: "Staff & Access",           sub: "Manage who can sign in and what they can do." },
+    admin:     { title: "Today's Overview",        sub: "Active members, cash collected and renewals — at a glance." },
+    members:   { title: "Members",                 sub: "Search, renew, freeze and reach members." },
+    reception: { title: "Reception Check-in Desk", sub: "Scan QR or CIN to validate access." },
+    onboard:   { title: "New Member",              sub: "Register a member, take cash and print a receipt." },
+    staff:     { title: "Staff & Access",          sub: "Manage who can sign in." },
   };
 
   return (
     <div className={cn("min-h-screen flex", themeClass)}>
-      <GymSidebar view="admin" accentLabel={accentLabel} />
+      <GymSidebar view={view} onChange={setView} accentLabel={accentLabel} role={role} />
 
       <main className="flex-1 p-3 md:p-5 space-y-4">
         {/* Top bar */}
@@ -81,7 +76,7 @@ function Workspace() {
 
           <div className="hidden md:flex relative flex-1 max-w-sm ml-2">
             <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search members, classes…" className="pl-9 bg-background/50" />
+            <Input placeholder="Search members…" className="pl-9 bg-background/50" />
           </div>
 
           <div className="ml-auto flex items-center gap-2">
@@ -92,7 +87,7 @@ function Workspace() {
                   onClick={() => setView(t.key)}
                   className={cn(
                     "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all whitespace-nowrap",
-                    view === t.key ? "bg-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:text-foreground",
+                    view === t.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <t.icon className="size-3.5" /> {t.label}
@@ -131,23 +126,20 @@ function Workspace() {
         </div>
 
         {/* Heading */}
-        <div className="px-1 flex items-end justify-between">
-          <div>
-            <h1 className="text-xl md:text-2xl font-semibold tracking-tight">{headings[view].title}</h1>
-            <p className="text-sm text-muted-foreground">{headings[view].sub}</p>
-          </div>
+        <div className="px-1">
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">{headings[view].title}</h1>
+          <p className="text-sm text-muted-foreground">{headings[view].sub}</p>
         </div>
 
         {!allowed ? (
           <AccessDenied onBack={() => setView(initialView)} />
         ) : (
           <>
-            {view === "admin"       && <AdminView todayMode={mode} dayLabel={label} />}
-            {view === "members"     && <MembersDirectory />}
-            {view === "reception"   && <ReceptionDesk />}
-            {view === "onboard"     && <OnboardingView />}
-            {view === "maintenance" && <MaintenanceBoard />}
-            {view === "staff"       && <StaffManagement />}
+            {view === "admin"     && <AdminView todayMode={mode} dayLabel={label} />}
+            {view === "members"   && <MembersDirectory />}
+            {view === "reception" && <ReceptionDesk />}
+            {view === "onboard"   && <OnboardingView />}
+            {view === "staff"     && <StaffManagement />}
           </>
         )}
       </main>

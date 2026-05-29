@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Plus, Receipt, UserPlus, Wallet, Wrench, X } from "lucide-react";
+import { Plus, Receipt, UserPlus, Wallet, X } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -15,7 +14,7 @@ import { toast } from "sonner";
 import { gymStore } from "@/lib/gym-store";
 import { MEMBERS } from "@/lib/gym-data";
 
-type Modal = null | "cash" | "machine" | "expense";
+type Modal = null | "cash" | "expense";
 
 export function QuickActionsFab({
   onQuickOnboard,
@@ -27,7 +26,7 @@ export function QuickActionsFab({
   const allActions = [
     {
       key: "onboard",
-      label: "Quick Onboard",
+      label: "New Member",
       icon: UserPlus,
       tone: "bg-primary text-primary-foreground",
       onClick: () => { onQuickOnboard(); setOpen(false); },
@@ -48,14 +47,6 @@ export function QuickActionsFab({
       tone: "bg-destructive text-destructive-foreground",
       onClick: () => { setModal("expense"); setOpen(false); },
       roles: ["owner"] as const,
-    },
-    {
-      key: "machine",
-      label: "Report Broken Machine",
-      icon: Wrench,
-      tone: "bg-warning text-black",
-      onClick: () => { setModal("machine"); setOpen(false); },
-      roles: ["owner", "receptionist"] as const,
     },
   ];
   const actions = allActions.filter((a) => (a.roles as readonly string[]).includes(role));
@@ -96,7 +87,6 @@ export function QuickActionsFab({
       </div>
 
       <CashDialog open={modal === "cash"} onOpenChange={(o) => !o && setModal(null)} />
-      <MachineDialog open={modal === "machine"} onOpenChange={(o) => !o && setModal(null)} />
       <ExpenseDialog open={modal === "expense"} onOpenChange={(o) => !o && setModal(null)} />
     </>
   );
@@ -105,22 +95,21 @@ export function QuickActionsFab({
 function CashDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const [amount, setAmount] = useState("");
   const [memberId, setMemberId] = useState<string>("__walkin__");
-  const [method, setMethod] = useState<"cash" | "card" | "transfer">("cash");
   const [note, setNote] = useState("");
 
   const submit = () => {
     const a = parseFloat(amount);
-    if (!a || a <= 0) return toast.error("Enter a valid amount");
+    if (!a || a <= 0) return toast.error("Enter the cash amount");
     const m = MEMBERS.find((x) => x.id === memberId);
     gymStore.logCash({
       amount: a,
-      method,
+      kind: m ? "dropin" : "other",
       memberId: m?.id,
       memberName: m?.name ?? "Walk-in",
       note: note || undefined,
     });
-    toast.success(`Logged ${a} MAD`, { description: m ? m.name : "Walk-in payment" });
-    setAmount(""); setNote(""); setMemberId("__walkin__"); setMethod("cash");
+    toast.success(`Logged ${a} MAD cash`, { description: m ? m.name : "Walk-in payment" });
+    setAmount(""); setNote(""); setMemberId("__walkin__");
     onOpenChange(false);
   };
 
@@ -130,19 +119,19 @@ function CashDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: b
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="size-8 rounded-lg bg-success/20 text-success grid place-items-center"><Wallet className="size-4" /></span>
-            Log payment
+            Log cash payment
           </DialogTitle>
-          <DialogDescription>Record cash, card or transfer received at the desk.</DialogDescription>
+          <DialogDescription>Record cash received at the desk. All payments are cash (MAD).</DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <div className="space-y-1.5 col-span-2">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Amount (MAD)</Label>
+        <div className="grid grid-cols-1 gap-3 pt-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Cash amount (MAD)</Label>
             <Input
               type="number" inputMode="decimal" autoFocus
-              placeholder="e.g. 400"
+              placeholder="e.g. 250"
               value={amount} onChange={(e) => setAmount(e.target.value)}
-              className="bg-background/50 text-lg font-semibold"
+              className="bg-background/50 text-xl font-semibold"
             />
           </div>
           <div className="space-y-1.5">
@@ -158,19 +147,8 @@ function CashDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: b
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Method</Label>
-            <Select value={method} onValueChange={(v) => setMethod(v as "cash" | "card" | "transfer")}>
-              <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="card">Card</SelectItem>
-                <SelectItem value="transfer">Transfer</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5 col-span-2">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Note</Label>
-            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Renewal, drop-in, merch…" className="bg-background/50" />
+            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Drop-in, top-up, …" className="bg-background/50" />
           </div>
         </div>
 
@@ -178,63 +156,6 @@ function CashDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: b
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={submit} className="bg-success text-black hover:bg-success/90">
             <Wallet className="size-4" /> Save payment
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function MachineDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
-  const [machine, setMachine] = useState("");
-  const [severity, setSeverity] = useState<"low" | "medium" | "high">("medium");
-  const [note, setNote] = useState("");
-
-  const submit = () => {
-    if (!machine.trim()) return toast.error("Pick or name the machine");
-    gymStore.reportMaintenance({ machine: machine.trim(), severity, note: note || undefined });
-    toast.success("Maintenance ticket created", { description: `${machine} · ${severity} priority` });
-    setMachine(""); setSeverity("medium"); setNote("");
-    onOpenChange(false);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass border-border/60 sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span className="size-8 rounded-lg bg-warning/20 text-warning grid place-items-center"><Wrench className="size-4" /></span>
-            Report broken machine
-          </DialogTitle>
-          <DialogDescription>The on-call technician is notified instantly.</DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-3 pt-2">
-          <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Machine</Label>
-            <Input autoFocus placeholder="e.g. Treadmill #3, Cable cross, Squat rack" value={machine} onChange={(e) => setMachine(e.target.value)} className="bg-background/50" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Severity</Label>
-            <Select value={severity} onValueChange={(v) => setSeverity(v as "low" | "medium" | "high")}>
-              <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">Low · still usable</SelectItem>
-                <SelectItem value="medium">Medium · partial issue</SelectItem>
-                <SelectItem value="high">High · out of service</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Notes</Label>
-            <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Describe what's wrong…" className="bg-background/50 min-h-24" />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={submit} className="bg-warning text-black hover:bg-warning/90">
-            <Wrench className="size-4" /> Send ticket
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -250,8 +171,7 @@ function ExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
   const submit = () => {
     const a = parseFloat(amount);
     if (!a || a <= 0) return toast.error("Enter a valid amount");
-    if (!category.trim()) return toast.error("Pick a category");
-    gymStore.logExpense({ amount: a, category: category.trim(), note: note || undefined });
+    gymStore.logExpense({ amount: a, category, note: note || undefined });
     toast.success(`Logged expense ${a} MAD`, { description: category });
     setAmount(""); setNote(""); setCategory("Cleaning supplies");
     onOpenChange(false);
@@ -265,15 +185,15 @@ function ExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
             <span className="size-8 rounded-lg bg-destructive/20 text-destructive grid place-items-center"><Receipt className="size-4" /></span>
             Log petty cash expense
           </DialogTitle>
-          <DialogDescription>Tracks outflows so Net Cash stays accurate.</DialogDescription>
+          <DialogDescription>Tracks outflows alongside the day's cash.</DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <div className="space-y-1.5 col-span-2">
+        <div className="grid grid-cols-1 gap-3 pt-2">
+          <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Amount (MAD)</Label>
             <Input type="number" inputMode="decimal" autoFocus placeholder="e.g. 120" value={amount} onChange={(e) => setAmount(e.target.value)} className="bg-background/50 text-lg font-semibold" />
           </div>
-          <div className="space-y-1.5 col-span-2">
+          <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Category</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
@@ -282,12 +202,11 @@ function ExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
                 <SelectItem value="Equipment repair">Equipment repair</SelectItem>
                 <SelectItem value="Utilities">Utilities</SelectItem>
                 <SelectItem value="Staff payroll">Staff payroll</SelectItem>
-                <SelectItem value="Marketing">Marketing</SelectItem>
                 <SelectItem value="Other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5 col-span-2">
+          <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Note</Label>
             <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional detail" className="bg-background/50" />
           </div>

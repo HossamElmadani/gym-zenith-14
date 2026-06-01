@@ -122,6 +122,7 @@ export function OnboardingView() {
         subEnd: endDate,
         subMonths: months,
         history: [{ date: start, plan, months, amount: cashNumber }],
+        coachId: coachId === "none" ? null : coachId,
       });
       // Cash log
       gymStore.logCash({

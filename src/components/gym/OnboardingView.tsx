@@ -11,12 +11,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
-  CalendarIcon, CheckCircle2, Info, Loader2, MessageCircle,
+  CalendarIcon, CheckCircle2, Dumbbell, Info, Loader2, MessageCircle,
   Printer, ShieldCheck, Upload, User2, Wallet, X,
 } from "lucide-react";
 import {
   MEMBERS, PLAN_OPTIONS, PLAN_PRICES, type PlanCode,
 } from "@/lib/gym-data";
+import { useCoaches } from "@/lib/coaches-data";
 import { tzAddMonthsISO, tzFormatDate, tzTodayISO } from "@/lib/gym-tz";
 import { gymStore } from "@/lib/gym-store";
 import { MemberQR } from "./MemberQR";
@@ -37,6 +38,12 @@ export function OnboardingView() {
   const [plan, setPlan] = useState<PlanCode>("3M");
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [cashAmount, setCashAmount] = useState<string>(String(PLAN_PRICES["3M"]));
+  const [coachId, setCoachId] = useState<string>("none");
+  const coaches = useCoaches();
+  const eligibleCoaches = useMemo(
+    () => (gender ? coaches.filter((c) => (gender === "male" ? c.audience === "men" : c.audience === "women")) : []),
+    [coaches, gender],
+  );
 
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState<null | {

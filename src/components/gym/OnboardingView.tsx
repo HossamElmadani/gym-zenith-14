@@ -11,12 +11,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
-  CalendarIcon, CheckCircle2, Info, Loader2, MessageCircle,
+  CalendarIcon, CheckCircle2, Dumbbell, Info, Loader2, MessageCircle,
   Printer, ShieldCheck, Upload, User2, Wallet, X,
 } from "lucide-react";
 import {
   MEMBERS, PLAN_OPTIONS, PLAN_PRICES, type PlanCode,
 } from "@/lib/gym-data";
+import { useCoaches } from "@/lib/coaches-data";
 import { tzAddMonthsISO, tzFormatDate, tzTodayISO } from "@/lib/gym-tz";
 import { gymStore } from "@/lib/gym-store";
 import { MemberQR } from "./MemberQR";
@@ -37,6 +38,12 @@ export function OnboardingView() {
   const [plan, setPlan] = useState<PlanCode>("3M");
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [cashAmount, setCashAmount] = useState<string>(String(PLAN_PRICES["3M"]));
+  const [coachId, setCoachId] = useState<string>("none");
+  const coaches = useCoaches();
+  const eligibleCoaches = useMemo(
+    () => (gender ? coaches.filter((c) => (gender === "male" ? c.audience === "men" : c.audience === "women")) : []),
+    [coaches, gender],
+  );
 
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState<null | {
@@ -115,6 +122,7 @@ export function OnboardingView() {
         subEnd: endDate,
         subMonths: months,
         history: [{ date: start, plan, months, amount: cashNumber }],
+        coachId: coachId === "none" ? null : coachId,
       });
       // Cash log
       gymStore.logCash({
@@ -137,6 +145,7 @@ export function OnboardingView() {
     setName(""); setCin(""); setCinStatus("idle"); setPhone("");
     setGender(""); setAvatar(null); setPlan("3M");
     setStartDate(new Date()); setCashAmount(String(PLAN_PRICES["3M"]));
+    setCoachId("none");
     setRegistered(null);
   };
 
@@ -199,7 +208,7 @@ export function OnboardingView() {
 
             <div className="space-y-1.5">
               <Label>Gender</Label>
-              <Select value={gender || undefined} onValueChange={(v) => setGender(v as "male" | "female")}>
+              <Select value={gender || undefined} onValueChange={(v) => { setGender(v as "male" | "female"); setCoachId("none"); }}>
                 <SelectTrigger className="bg-background/50"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="male">Male</SelectItem>
@@ -209,6 +218,42 @@ export function OnboardingView() {
               <p className={cn("text-xs flex items-start gap-1.5 mt-1", gender ? "text-foreground/80" : "text-muted-foreground")}>
                 <Info className="size-3.5 mt-0.5 shrink-0 text-primary" />
                 {scheduleHelper}
+              </p>
+            </div>
+
+            <div className="md:col-span-2 space-y-1.5">
+              <Label className="flex items-center gap-1.5">
+                <Dumbbell className="size-3.5 text-primary" /> Assign coach (optional)
+              </Label>
+              <Select
+                value={coachId}
+                onValueChange={setCoachId}
+                disabled={!gender}
+              >
+                <SelectTrigger className={cn(
+                  "bg-background/50",
+                  gender === "male" && "border-blue-500/40",
+                  gender === "female" && "border-rose-500/40",
+                )}>
+                  <SelectValue placeholder={gender ? "Select a coach" : "Pick gender first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— None —</SelectItem>
+                  {eligibleCoaches.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      <span className="flex items-center gap-2">
+                        <span className={cn("size-2 rounded-full", c.audience === "men" ? "bg-blue-500" : "bg-rose-500")} />
+                        {c.name} <span className="text-muted-foreground text-xs">· {c.specialty}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                <Info className="size-3 text-primary" />
+                {gender
+                  ? `Only ${gender === "male" ? "Men Only" : "Women Only"} coaches are shown — gender isolation enforced.`
+                  : "Coach list filters automatically once a gender is selected."}
               </p>
             </div>
 

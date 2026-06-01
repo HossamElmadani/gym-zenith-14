@@ -159,6 +159,14 @@ export const gymStore = {
     return full;
   },
 
+  assignCoach(memberId: string, coachId: string | null) {
+    const m = MEMBERS.find((x) => x.id === memberId);
+    if (!m) return;
+    m.coachId = coachId;
+    persistMembers();
+    emit();
+  },
+
   renewMember(memberId: string, planCode: PlanCode, amountPaid: number): Member | null {
     const m = MEMBERS.find((x) => x.id === memberId);
     if (!m) return null;

@@ -220,7 +220,41 @@ export function OnboardingView() {
             </div>
 
             <div className="md:col-span-2 space-y-1.5">
-              <Label>Profile picture (optional)</Label>
+              <Label className="flex items-center gap-1.5">
+                <Dumbbell className="size-3.5 text-primary" /> Assign coach (optional)
+              </Label>
+              <Select
+                value={coachId}
+                onValueChange={setCoachId}
+                disabled={!gender}
+              >
+                <SelectTrigger className={cn(
+                  "bg-background/50",
+                  gender === "male" && "border-blue-500/40",
+                  gender === "female" && "border-rose-500/40",
+                )}>
+                  <SelectValue placeholder={gender ? "Select a coach" : "Pick gender first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— None —</SelectItem>
+                  {eligibleCoaches.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      <span className="flex items-center gap-2">
+                        <span className={cn("size-2 rounded-full", c.audience === "men" ? "bg-blue-500" : "bg-rose-500")} />
+                        {c.name} <span className="text-muted-foreground text-xs">· {c.specialty}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                <Info className="size-3 text-primary" />
+                {gender
+                  ? `Only ${gender === "male" ? "Men Only" : "Women Only"} coaches are shown — gender isolation enforced.`
+                  : "Coach list filters automatically once a gender is selected."}
+              </p>
+            </div>
+
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}

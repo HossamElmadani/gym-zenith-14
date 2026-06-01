@@ -26,6 +26,7 @@ export type Member = {
   history: SubHistory[];
   recentCheckIns: string[];
   createdAt: string;
+  coachId?: string | null;
 };
 
 export const PLAN_PRICES: Record<PlanCode, number> = {

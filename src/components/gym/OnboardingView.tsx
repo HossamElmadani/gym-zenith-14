@@ -255,6 +255,8 @@ export function OnboardingView() {
               </p>
             </div>
 
+            <div className="md:col-span-2 space-y-1.5">
+              <Label>Profile picture (optional)</Label>
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}

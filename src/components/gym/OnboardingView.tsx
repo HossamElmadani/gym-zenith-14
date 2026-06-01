@@ -145,6 +145,7 @@ export function OnboardingView() {
     setName(""); setCin(""); setCinStatus("idle"); setPhone("");
     setGender(""); setAvatar(null); setPlan("3M");
     setStartDate(new Date()); setCashAmount(String(PLAN_PRICES["3M"]));
+    setCoachId("none");
     setRegistered(null);
   };
 

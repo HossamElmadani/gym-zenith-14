@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bell, BookUser, LogOut, ScanLine, Shield, UserPlus, Users } from "lucide-react";
+import { Bell, BookUser, Dumbbell, LogOut, ScanLine, Shield, UserPlus, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,18 +16,20 @@ import { ReceptionDesk } from "./ReceptionDesk";
 import { QuickActionsFab } from "./QuickActionsFab";
 import { LoginScreen } from "./LoginScreen";
 import { StaffManagement } from "./StaffManagement";
+import { CoachesView } from "./CoachesView";
 import { AccessDenied } from "./AccessDenied";
 import { useAuth } from "@/lib/auth";
 import { dayName, todayGender } from "@/lib/gym-data";
 
-type View = "admin" | "members" | "onboard" | "reception" | "staff";
+type View = "admin" | "members" | "onboard" | "reception" | "coaches" | "staff";
 
 const TABS: { key: View; label: string; icon: typeof Users; roles: Array<"owner" | "receptionist"> }[] = [
-  { key: "admin",     label: "Dashboard", icon: Users,    roles: ["owner"] },
-  { key: "members",   label: "Members",   icon: BookUser, roles: ["owner", "receptionist"] },
-  { key: "reception", label: "Reception", icon: ScanLine, roles: ["owner", "receptionist"] },
-  { key: "onboard",   label: "Onboard",   icon: UserPlus, roles: ["owner", "receptionist"] },
-  { key: "staff",     label: "Staff",     icon: Shield,   roles: ["owner"] },
+  { key: "admin",     label: "Dashboard", icon: Users,     roles: ["owner"] },
+  { key: "members",   label: "Members",   icon: BookUser,  roles: ["owner", "receptionist"] },
+  { key: "reception", label: "Reception", icon: ScanLine,  roles: ["owner", "receptionist"] },
+  { key: "onboard",   label: "Onboard",   icon: UserPlus,  roles: ["owner", "receptionist"] },
+  { key: "coaches",   label: "Coaches",   icon: Dumbbell,  roles: ["owner", "receptionist"] },
+  { key: "staff",     label: "Staff",     icon: Shield,    roles: ["owner"] },
 ];
 
 export function GymApp() {
@@ -59,6 +61,7 @@ function Workspace() {
     members:   { title: "Members",                 sub: "Search, renew, freeze and reach members." },
     reception: { title: "Reception Check-in Desk", sub: "Scan QR or CIN to validate access." },
     onboard:   { title: "New Member",              sub: "Register a member, take cash and print a receipt." },
+    coaches:   { title: "Coaches & Groups",        sub: "Men's and Women's coaches — fully isolated to prevent human error." },
     staff:     { title: "Staff & Access",          sub: "Manage who can sign in." },
   };
 
@@ -139,6 +142,7 @@ function Workspace() {
             {view === "members"   && <MembersDirectory />}
             {view === "reception" && <ReceptionDesk />}
             {view === "onboard"   && <OnboardingView />}
+            {view === "coaches"   && <CoachesView />}
             {view === "staff"     && <StaffManagement />}
           </>
         )}

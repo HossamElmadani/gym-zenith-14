@@ -1,7 +1,7 @@
 import { Dumbbell, LayoutDashboard, Users, ScanLine, UserPlus, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type View = "admin" | "members" | "reception" | "onboard" | "staff";
+type View = "admin" | "members" | "reception" | "onboard" | "coaches" | "staff";
 
 type Props = {
   view: View;
@@ -15,6 +15,7 @@ const ALL: { key: View; icon: typeof Users; label: string; roles: Array<"owner" 
   { key: "members",   icon: Users,           label: "Members",    roles: ["owner", "receptionist"] },
   { key: "reception", icon: ScanLine,        label: "Reception",  roles: ["owner", "receptionist"] },
   { key: "onboard",   icon: UserPlus,        label: "Onboard",    roles: ["owner", "receptionist"] },
+  { key: "coaches",   icon: Dumbbell,        label: "Coaches",    roles: ["owner", "receptionist"] },
   { key: "staff",     icon: Shield,          label: "Staff",      roles: ["owner"] },
 ];
 

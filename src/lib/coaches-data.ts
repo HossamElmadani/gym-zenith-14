@@ -1,26 +1,62 @@
-// Coach data + persistence (Phase 8 — Gender-Isolated Coach & Group Management)
+// Coach data + persistence (Phase 8/10 — Gender-Isolated Coach & Group Management)
 import { useSyncExternalStore } from "react";
 
 export type CoachAudience = "men" | "women";
+
+/** Day-of-week index: 0=Sun, 1=Mon, ..., 6=Sat (matches tzDayOfWeek). */
+export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export const WEEKDAYS: { idx: Weekday; short: string; long: string }[] = [
+  { idx: 1, short: "Mon", long: "Monday" },
+  { idx: 2, short: "Tue", long: "Tuesday" },
+  { idx: 3, short: "Wed", long: "Wednesday" },
+  { idx: 4, short: "Thu", long: "Thursday" },
+  { idx: 5, short: "Fri", long: "Friday" },
+  { idx: 6, short: "Sat", long: "Saturday" },
+  { idx: 0, short: "Sun", long: "Sunday" },
+];
+
+/** Per the gym's gender matrix:
+ *  - Women: Mon, Wed, Fri only.
+ *  - Men:   Tue, Thu, Sat only.
+ *  Sundays are mixed/closed — never selectable for a single-audience coach.
+ */
+export const ALLOWED_DAYS: Record<CoachAudience, Weekday[]> = {
+  women: [1, 3, 5],
+  men:   [2, 4, 6],
+};
+
+export function isDayAllowed(audience: CoachAudience, day: Weekday) {
+  return ALLOWED_DAYS[audience].includes(day);
+}
 
 export type Coach = {
   id: string;
   name: string;
   specialty: string;
-  schedule: string;
+  workingDays: Weekday[];
+  startTime: string;     // "HH:MM"
+  endTime: string;       // "HH:MM"
   audience: CoachAudience;
   createdAt: string;
 };
 
-const KEY = "pulse.coaches.v1";
+/** Render coach.workingDays + times into a human-readable line. */
+export function formatSchedule(c: Coach): string {
+  if (!c.workingDays.length) return "Schedule TBD";
+  const ordered = WEEKDAYS.filter((w) => c.workingDays.includes(w.idx)).map((w) => w.short);
+  return `${ordered.join(" · ")} · ${c.startTime}-${c.endTime}`;
+}
+
+const KEY = "pulse.coaches.v2";
 
 const SEED: Coach[] = [
-  { id: "C-M01", name: "Younes El Amrani", specialty: "Bodybuilding", schedule: "Mon · Wed · Fri · 18:00-21:00", audience: "men", createdAt: new Date().toISOString() },
-  { id: "C-M02", name: "Karim Bensaid", specialty: "Strength & Powerlifting", schedule: "Mon · Wed · Fri · 06:00-09:00", audience: "men", createdAt: new Date().toISOString() },
-  { id: "C-M03", name: "Reda Hakim", specialty: "Boxing / Cardio", schedule: "Mon · Wed · Fri · 19:30-21:00", audience: "men", createdAt: new Date().toISOString() },
-  { id: "C-W01", name: "Salma Idrissi", specialty: "Aerobics & Zumba", schedule: "Tue · Thu · Sat · 18:00-20:00", audience: "women", createdAt: new Date().toISOString() },
-  { id: "C-W02", name: "Nadia Tahiri", specialty: "Pilates & Core", schedule: "Tue · Thu · Sat · 09:00-11:00", audience: "women", createdAt: new Date().toISOString() },
-  { id: "C-W03", name: "Imane Ouazzani", specialty: "HIIT & Weight Loss", schedule: "Tue · Thu · Sat · 17:00-19:00", audience: "women", createdAt: new Date().toISOString() },
+  { id: "C-M01", name: "Younes El Amrani", specialty: "Bodybuilding",            workingDays: [2, 4, 6], startTime: "18:00", endTime: "21:00", audience: "men",   createdAt: new Date().toISOString() },
+  { id: "C-M02", name: "Karim Bensaid",    specialty: "Strength & Powerlifting", workingDays: [2, 4, 6], startTime: "06:00", endTime: "09:00", audience: "men",   createdAt: new Date().toISOString() },
+  { id: "C-M03", name: "Reda Hakim",       specialty: "Boxing / Cardio",         workingDays: [2, 4, 6], startTime: "19:30", endTime: "21:00", audience: "men",   createdAt: new Date().toISOString() },
+  { id: "C-W01", name: "Salma Idrissi",    specialty: "Aerobics & Zumba",        workingDays: [1, 3, 5], startTime: "18:00", endTime: "20:00", audience: "women", createdAt: new Date().toISOString() },
+  { id: "C-W02", name: "Nadia Tahiri",     specialty: "Pilates & Core",          workingDays: [1, 3, 5], startTime: "09:00", endTime: "11:00", audience: "women", createdAt: new Date().toISOString() },
+  { id: "C-W03", name: "Imane Ouazzani",   specialty: "HIIT & Weight Loss",      workingDays: [1, 3, 5], startTime: "17:00", endTime: "19:00", audience: "women", createdAt: new Date().toISOString() },
 ];
 
 function hydrate(): Coach[] {

@@ -144,6 +144,7 @@ export function ReceptionDesk() {
         <ResultCard
           result={result}
           mode={mode}
+          shiftLabel={shift.label}
           label={label}
           doorPulse={doorPulse}
           onFreeze={(m) => setFreezeFor(m)}

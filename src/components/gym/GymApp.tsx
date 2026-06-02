@@ -19,7 +19,8 @@ import { StaffManagement } from "./StaffManagement";
 import { CoachesView } from "./CoachesView";
 import { AccessDenied } from "./AccessDenied";
 import { useAuth } from "@/lib/auth";
-import { dayName, todayGender } from "@/lib/gym-data";
+import { dayName } from "@/lib/gym-data";
+import { useCurrentShift } from "@/lib/gym-shift";
 
 type View = "admin" | "members" | "onboard" | "reception" | "coaches" | "staff";
 

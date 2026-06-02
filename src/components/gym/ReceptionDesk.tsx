@@ -337,7 +337,7 @@ function ResultCard({
             </div>
           )}
 
-          {(result.kind === "expired" || result.kind === "wrong-day") && (
+          {(result.kind === "expired" || result.kind === "wrong-shift" || result.kind === "closed") && (
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <WhatsAppButton
                 member={m}

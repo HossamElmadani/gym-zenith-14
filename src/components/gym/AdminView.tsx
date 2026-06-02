@@ -8,7 +8,7 @@ import { WhatsAppButton } from "./WhatsAppButton";
 import { CashFlowWidget } from "./CashFlowWidget";
 import { cashCollectedToday, isFrozenToday, useGymStore } from "@/lib/gym-store";
 
-type Props = { todayMode: "men" | "women" | "mixed"; dayLabel: string };
+type Props = { todayMode: "men" | "women" | "closed"; dayLabel: string };
 
 const initials = (n: string) => n.split(" ").map((p) => p[0]).slice(0, 2).join("");
 

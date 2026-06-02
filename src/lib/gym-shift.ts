@@ -2,6 +2,7 @@
 // Strictly evaluated in Africa/Casablanca via tz helpers.
 // This is the SINGLE SOURCE OF TRUTH for "who can enter right now".
 
+import { useEffect, useState } from "react";
 import { APP_TZ, tzDayOfWeek } from "./gym-tz";
 
 export type ShiftAudience = "men" | "women" | "closed";

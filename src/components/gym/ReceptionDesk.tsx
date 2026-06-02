@@ -96,7 +96,7 @@ export function ReceptionDesk() {
   const womenCount = log.filter((l) => l.gender === "female").length;
 
   const allowedLabel =
-    mode === "men" ? "Men's Day" : mode === "women" ? "Women's Day" : "Mixed Day";
+    mode === "men" ? "Men's Shift" : mode === "women" ? "Women's Shift" : "Transition / Closed";
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">

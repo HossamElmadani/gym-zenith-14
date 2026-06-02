@@ -1,5 +1,5 @@
 import {
-  tzAddDaysISO, tzDayOfWeek, tzWeekdayName, tzDaysUntil, tzTodayISO, tzUsedPct,
+  tzAddDaysISO, tzWeekdayName, tzDaysUntil, tzTodayISO, tzUsedPct,
 } from "./gym-tz";
 
 export type Gender = "male" | "female";

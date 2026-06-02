@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScanLine, CheckCircle2, XCircle, AlertOctagon, Activity, Clock, User2, Zap, Snowflake } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MEMBERS, dayName, daysRemaining, todayGender, type Member } from "@/lib/gym-data";
+import { MEMBERS, dayName, daysRemaining, type Member } from "@/lib/gym-data";
+import { useCurrentShift, type ShiftAudience } from "@/lib/gym-shift";
 import { WhatsAppButton } from "./WhatsAppButton";
 import { FreezeDialog } from "./FreezeDialog";
 

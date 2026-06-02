@@ -63,11 +63,13 @@ export function ReceptionDesk() {
     let r: Result;
     if (days <= 0) {
       r = { kind: "expired", member };
+    } else if (mode === "closed") {
+      r = { kind: "closed", member };
     } else if (
       (mode === "men" && member.gender !== "male") ||
       (mode === "women" && member.gender !== "female")
     ) {
-      r = { kind: "wrong-day", member };
+      r = { kind: "wrong-shift", member };
     } else {
       r = { kind: "granted", member, days };
       setDoorPulse((n) => n + 1);

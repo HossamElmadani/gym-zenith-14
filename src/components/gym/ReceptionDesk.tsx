@@ -23,7 +23,8 @@ type Result =
   | { kind: "idle" }
   | { kind: "unknown"; raw: string }
   | { kind: "granted"; member: (typeof MEMBERS)[number]; days: number }
-  | { kind: "wrong-day"; member: (typeof MEMBERS)[number] }
+  | { kind: "wrong-shift"; member: (typeof MEMBERS)[number] }
+  | { kind: "closed"; member: (typeof MEMBERS)[number] }
   | { kind: "expired"; member: (typeof MEMBERS)[number] };
 
 const initials = (n: string) =>

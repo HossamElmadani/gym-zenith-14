@@ -80,7 +80,9 @@ function Workspace() {
         {/* Top bar */}
         <div className="glass rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <Badge className="bg-primary text-primary-foreground">{label}</Badge>
+            <Badge className={cn("border", shiftBadgeClass)} variant="outline">
+              {label} · {shiftLabel}
+            </Badge>
             <span className="text-sm text-muted-foreground hidden sm:inline">{accentLabel}</span>
           </div>
 

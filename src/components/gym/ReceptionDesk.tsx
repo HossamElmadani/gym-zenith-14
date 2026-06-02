@@ -32,7 +32,8 @@ const initials = (n: string) =>
 
 export function ReceptionDesk() {
   const today = useMemo(() => new Date(), []);
-  const mode = todayGender(today);
+  const shift = useCurrentShift();
+  const mode: ShiftAudience = shift.audience;
   const label = dayName(today);
   const inputRef = useRef<HTMLInputElement>(null);
 

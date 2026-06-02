@@ -19,7 +19,8 @@ import { StaffManagement } from "./StaffManagement";
 import { CoachesView } from "./CoachesView";
 import { AccessDenied } from "./AccessDenied";
 import { useAuth } from "@/lib/auth";
-import { dayName, todayGender } from "@/lib/gym-data";
+import { dayName } from "@/lib/gym-data";
+import { useCurrentShift } from "@/lib/gym-shift";
 
 type View = "admin" | "members" | "onboard" | "reception" | "coaches" | "staff";
 
@@ -44,14 +45,20 @@ function Workspace() {
   const initialView: View = role === "receptionist" ? "reception" : "admin";
   const [view, setView] = useState<View>(initialView);
   const today = useMemo(() => new Date(), []);
-  const mode = todayGender(today);
+  const shift = useCurrentShift();
+  const mode = shift.audience; // "men" | "women" | "closed"
   const label = dayName(today);
 
-  const themeClass = mode === "women" ? "theme-womens" : mode === "mixed" ? "theme-neutral" : "";
-  const accentLabel =
-    mode === "men" ? "Men's day · Mon/Wed/Fri"
-      : mode === "women" ? "Women's day · Tue/Thu/Sat"
-      : "Mixed day · Sunday";
+  const themeClass = mode === "women" ? "theme-womens" : mode === "closed" ? "theme-neutral" : "";
+  const shiftLabel =
+    mode === "men" ? "Active Shift: Men"
+      : mode === "women" ? "Active Shift: Women"
+      : "Transition / Closed";
+  const shiftBadgeClass =
+    mode === "men" ? "bg-blue-500/20 text-blue-200 border border-blue-500/40"
+      : mode === "women" ? "bg-rose-500/20 text-rose-200 border border-rose-500/40"
+      : "bg-muted/40 text-muted-foreground border border-border/60";
+  const accentLabel = shift.label;
 
   const visibleTabs = TABS.filter((t) => t.roles.includes(role));
   const allowed = visibleTabs.some((t) => t.key === view);
@@ -73,7 +80,9 @@ function Workspace() {
         {/* Top bar */}
         <div className="glass rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <Badge className="bg-primary text-primary-foreground">{label}</Badge>
+            <Badge className={cn("border", shiftBadgeClass)} variant="outline">
+              {label} · {shiftLabel}
+            </Badge>
             <span className="text-sm text-muted-foreground hidden sm:inline">{accentLabel}</span>
           </div>
 

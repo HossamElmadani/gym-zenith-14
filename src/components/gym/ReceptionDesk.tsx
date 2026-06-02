@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScanLine, CheckCircle2, XCircle, AlertOctagon, Activity, Clock, User2, Zap, Snowflake } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MEMBERS, dayName, daysRemaining, todayGender, type Member } from "@/lib/gym-data";
+import { MEMBERS, dayName, daysRemaining, type Member } from "@/lib/gym-data";
+import { useCurrentShift, type ShiftAudience } from "@/lib/gym-shift";
 import { WhatsAppButton } from "./WhatsAppButton";
 import { FreezeDialog } from "./FreezeDialog";
 
@@ -22,7 +23,8 @@ type Result =
   | { kind: "idle" }
   | { kind: "unknown"; raw: string }
   | { kind: "granted"; member: (typeof MEMBERS)[number]; days: number }
-  | { kind: "wrong-day"; member: (typeof MEMBERS)[number] }
+  | { kind: "wrong-shift"; member: (typeof MEMBERS)[number] }
+  | { kind: "closed"; member: (typeof MEMBERS)[number] }
   | { kind: "expired"; member: (typeof MEMBERS)[number] };
 
 const initials = (n: string) =>
@@ -30,7 +32,8 @@ const initials = (n: string) =>
 
 export function ReceptionDesk() {
   const today = useMemo(() => new Date(), []);
-  const mode = todayGender(today);
+  const shift = useCurrentShift();
+  const mode: ShiftAudience = shift.audience;
   const label = dayName(today);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,11 +63,13 @@ export function ReceptionDesk() {
     let r: Result;
     if (days <= 0) {
       r = { kind: "expired", member };
+    } else if (mode === "closed") {
+      r = { kind: "closed", member };
     } else if (
       (mode === "men" && member.gender !== "male") ||
       (mode === "women" && member.gender !== "female")
     ) {
-      r = { kind: "wrong-day", member };
+      r = { kind: "wrong-shift", member };
     } else {
       r = { kind: "granted", member, days };
       setDoorPulse((n) => n + 1);
@@ -91,7 +96,7 @@ export function ReceptionDesk() {
   const womenCount = log.filter((l) => l.gender === "female").length;
 
   const allowedLabel =
-    mode === "men" ? "Men's Day" : mode === "women" ? "Women's Day" : "Mixed Day";
+    mode === "men" ? "Men's Shift" : mode === "women" ? "Women's Shift" : "Transition / Closed";
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -139,6 +144,7 @@ export function ReceptionDesk() {
         <ResultCard
           result={result}
           mode={mode}
+          shiftLabel={shift.label}
           label={label}
           doorPulse={doorPulse}
           onFreeze={(m) => setFreezeFor(m)}
@@ -211,12 +217,14 @@ export function ReceptionDesk() {
 function ResultCard({
   result,
   mode,
+  shiftLabel,
   label,
   doorPulse,
   onFreeze,
 }: {
   result: Result;
-  mode: "men" | "women" | "mixed";
+  mode: ShiftAudience;
+  shiftLabel: string;
   label: string;
   doorPulse: number;
   onFreeze: (m: Member) => void;
@@ -272,14 +280,18 @@ function ResultCard({
       ? "Access Granted"
       : result.kind === "expired"
         ? "Access Denied · Subscription Expired"
-        : `Access Denied · ${mode === "men" ? "Men's" : "Women's"} Day Today`;
+        : result.kind === "closed"
+          ? "Access Denied · Gym Closed / Transition"
+          : `Access Denied · ${mode === "men" ? "Men's" : "Women's"} Shift In Progress`;
 
   const subline =
     result.kind === "granted"
       ? `${result.days} day${result.days === 1 ? "" : "s"} left on ${m.plan} plan`
       : result.kind === "expired"
         ? `Subscription ended. Renew to restore access.`
-        : `${m.name} is registered as ${m.gender === "male" ? "Male" : "Female"}. ${label} is reserved for ${mode === "men" ? "Men" : "Women"}.`;
+        : result.kind === "closed"
+          ? `No active shift right now (${label}). ${shiftLabel}.`
+          : `${m.name} is registered as ${m.gender === "male" ? "Male" : "Female"}. Current shift is reserved for ${mode === "men" ? "Men" : "Women"}.`;
 
   return (
     <Card className={cn("glass rounded-2xl border-2 overflow-hidden", tone)}>
@@ -325,7 +337,7 @@ function ResultCard({
             </div>
           )}
 
-          {(result.kind === "expired" || result.kind === "wrong-day") && (
+          {(result.kind === "expired" || result.kind === "wrong-shift" || result.kind === "closed") && (
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <WhatsAppButton
                 member={m}

@@ -1,5 +1,5 @@
 import {
-  tzAddDaysISO, tzDayOfWeek, tzWeekdayName, tzDaysUntil, tzTodayISO, tzUsedPct,
+  tzAddDaysISO, tzWeekdayName, tzDaysUntil, tzTodayISO, tzUsedPct,
 } from "./gym-tz";
 
 export type Gender = "male" | "female";
@@ -64,11 +64,13 @@ export function subStatus(endIso: string): "active" | "expiring" | "expired" {
 
 export const subUsedPct = tzUsedPct;
 
-export function todayGender(d = new Date()): "men" | "women" | "mixed" {
-  const day = tzDayOfWeek(d);
-  if ([1, 3, 5].includes(day)) return "men";
-  if ([2, 4, 6].includes(day)) return "women";
-  return "mixed";
+// PHASE 9: Gender mode is no longer based on day-of-week alone.
+// It is computed from the live shift matrix in Africa/Casablanca.
+// Re-exported here so existing callers stay backwards-compatible.
+export { currentShift as _currentShift } from "./gym-shift";
+import { currentShift } from "./gym-shift";
+export function todayGender(d = new Date()): "men" | "women" | "closed" {
+  return currentShift(d).audience;
 }
 
 export const dayName = (d = new Date()) => tzWeekdayName(d);

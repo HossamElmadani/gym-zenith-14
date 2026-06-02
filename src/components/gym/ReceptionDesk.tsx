@@ -280,14 +280,18 @@ function ResultCard({
       ? "Access Granted"
       : result.kind === "expired"
         ? "Access Denied · Subscription Expired"
-        : `Access Denied · ${mode === "men" ? "Men's" : "Women's"} Day Today`;
+        : result.kind === "closed"
+          ? "Access Denied · Gym Closed / Transition"
+          : `Access Denied · ${mode === "men" ? "Men's" : "Women's"} Shift In Progress`;
 
   const subline =
     result.kind === "granted"
       ? `${result.days} day${result.days === 1 ? "" : "s"} left on ${m.plan} plan`
       : result.kind === "expired"
         ? `Subscription ended. Renew to restore access.`
-        : `${m.name} is registered as ${m.gender === "male" ? "Male" : "Female"}. ${label} is reserved for ${mode === "men" ? "Men" : "Women"}.`;
+        : result.kind === "closed"
+          ? `No active shift right now (${label}). ${shiftLabel}.`
+          : `${m.name} is registered as ${m.gender === "male" ? "Male" : "Female"}. Current shift is reserved for ${mode === "men" ? "Men" : "Women"}.`;
 
   return (
     <Card className={cn("glass rounded-2xl border-2 overflow-hidden", tone)}>

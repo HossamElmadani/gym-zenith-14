@@ -106,9 +106,6 @@ function cap(s: string) {
 
 /** React hook: re-render every `intervalMs` so the badge tracks real time. */
 export function useCurrentShift(intervalMs = 30_000): CurrentShift {
-  // Lazy import to avoid SSR React import cost at module load.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { useEffect, useState } = require("react") as typeof import("react");
   const [shift, setShift] = useState<CurrentShift>(() => currentShift());
   useEffect(() => {
     const tick = () => setShift(currentShift());

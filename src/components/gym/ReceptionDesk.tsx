@@ -216,12 +216,14 @@ export function ReceptionDesk() {
 function ResultCard({
   result,
   mode,
+  shiftLabel,
   label,
   doorPulse,
   onFreeze,
 }: {
   result: Result;
-  mode: "men" | "women" | "mixed";
+  mode: ShiftAudience;
+  shiftLabel: string;
   label: string;
   doorPulse: number;
   onFreeze: (m: Member) => void;

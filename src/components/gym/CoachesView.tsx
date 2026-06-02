@@ -61,7 +61,7 @@ export function CoachesView() {
           </TabsList>
 
           <div className="flex items-center gap-2">
-            {todayMode !== "mixed" && (
+            {todayMode !== "closed" && (
               <Badge variant="secondary" className="bg-accent/40 text-muted-foreground border-border/60">
                 <Sparkles className="size-3 mr-1" /> Auto-opened today's group
               </Badge>

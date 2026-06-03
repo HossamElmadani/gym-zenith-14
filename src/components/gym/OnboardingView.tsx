@@ -27,6 +27,7 @@ import { useI18n } from "@/lib/i18n";
 type CinStatus = "idle" | "checking" | "ok" | "duplicate";
 
 export function OnboardingView() {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [cin, setCin] = useState("");
   const [cinStatus, setCinStatus] = useState<CinStatus>("idle");

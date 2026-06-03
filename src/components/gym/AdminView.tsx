@@ -7,6 +7,7 @@ import { MEMBERS, daysRemaining, type Gender } from "@/lib/gym-data";
 import { WhatsAppButton } from "./WhatsAppButton";
 import { CashFlowWidget } from "./CashFlowWidget";
 import { cashCollectedToday, isFrozenToday, useGymStore } from "@/lib/gym-store";
+import { useI18n } from "@/lib/i18n";
 
 type Props = { todayMode: "men" | "women" | "closed"; dayLabel: string };
 
@@ -14,6 +15,7 @@ const initials = (n: string) => n.split(" ").map((p) => p[0]).slice(0, 2).join("
 
 export function AdminView({ todayMode, dayLabel }: Props) {
   useGymStore((s) => s.v);
+  const { t } = useI18n();
   const allowed: Gender | null = todayMode === "men" ? "male" : todayMode === "women" ? "female" : null;
 
   const activeToday = useMemo(
@@ -44,7 +46,7 @@ export function AdminView({ todayMode, dayLabel }: Props) {
       <Card className="glass rounded-2xl">
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Active today</span>
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">{t("metric.activeToday")}</span>
             <Users className="size-4 text-primary" />
           </div>
           <div className="mt-3 text-4xl font-semibold tracking-tight">{activeToday.length}</div>
@@ -57,7 +59,7 @@ export function AdminView({ todayMode, dayLabel }: Props) {
       <Card className="glass rounded-2xl">
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Cash collected today</span>
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">{t("metric.cashToday")}</span>
             <Wallet className="size-4 text-success" />
           </div>
           <div className="mt-3 text-4xl font-semibold tracking-tight text-success">
@@ -70,7 +72,7 @@ export function AdminView({ todayMode, dayLabel }: Props) {
       <Card className="glass rounded-2xl">
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Expiring this week</span>
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">{t("metric.expiringWeek")}</span>
             <AlertTriangle className="size-4 text-warning" />
           </div>
           <div className="mt-3 text-4xl font-semibold tracking-tight text-warning">{expiringSoon.length}</div>

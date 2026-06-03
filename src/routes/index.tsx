@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { GymApp } from "@/components/gym/GymApp";
 import { AuthProvider } from "@/lib/auth";
+import { I18nProvider } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,8 +17,10 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <AuthProvider>
-      <GymApp />
-    </AuthProvider>
+    <I18nProvider>
+      <AuthProvider>
+        <GymApp />
+      </AuthProvider>
+    </I18nProvider>
   );
 }

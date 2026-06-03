@@ -122,30 +122,30 @@ export function MembersDirectory() {
       <Card className="glass rounded-2xl">
         <CardHeader className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle className="text-base">Members</CardTitle>
-            <span className="text-xs text-muted-foreground">{rows.length} of {MEMBERS.length}</span>
+            <CardTitle className="text-base">{t("nav.members")}</CardTitle>
+            <span className="text-xs text-muted-foreground"><bdi>{rows.length}</bdi> {t("common.of")} <bdi>{MEMBERS.length}</bdi></span>
           </div>
           <div className="flex flex-wrap gap-2">
             <div className="relative flex-1 min-w-[180px]">
-              <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, CIN, or ID…" className="pl-9 bg-background/50" />
+              <Search className="size-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search.byNameCinId")} className="ps-9 bg-background/50" />
             </div>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
               <SelectTrigger className="w-[170px] bg-background/50"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="expiring">Expiring Soon</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
-                <SelectItem value="frozen">Frozen</SelectItem>
+                <SelectItem value="all">{t("filter.allStatuses")}</SelectItem>
+                <SelectItem value="active">{t("status.active")}</SelectItem>
+                <SelectItem value="expiring">{t("status.expiring")}</SelectItem>
+                <SelectItem value="expired">{t("status.expired")}</SelectItem>
+                <SelectItem value="frozen">{t("status.frozen")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={genderFilter} onValueChange={(v) => setGenderFilter(v as typeof genderFilter)}>
               <SelectTrigger className="w-[150px] bg-background/50"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All genders</SelectItem>
-                <SelectItem value="male">Men</SelectItem>
-                <SelectItem value="female">Women</SelectItem>
+                <SelectItem value="all">{t("filter.allGenders")}</SelectItem>
+                <SelectItem value="male">{t("gender.men")}</SelectItem>
+                <SelectItem value="female">{t("gender.women")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -154,12 +154,12 @@ export function MembersDirectory() {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-border/60">
-                <TableHead>Member</TableHead>
-                <TableHead className="hidden md:table-cell">CIN</TableHead>
-                <TableHead className="hidden sm:table-cell">Gender</TableHead>
-                <TableHead>Days Left</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("table.member")}</TableHead>
+                <TableHead className="hidden md:table-cell">{t("table.cin")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("table.gender")}</TableHead>
+                <TableHead>{t("table.daysLeft")}</TableHead>
+                <TableHead>{t("table.status")}</TableHead>
+                <TableHead className="text-end">{t("table.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -169,7 +169,7 @@ export function MembersDirectory() {
               {rows.map((m) => {
                 const eff = effectiveStatus(m);
                 const d = daysRemaining(m.subEnd);
-                const s = statusMeta(eff);
+                const s = statusMeta(eff, t);
                 const isAtRisk = eff === "expiring" || eff === "expired";
                 return (
                   <TableRow key={m.id} onClick={() => setSelected(m)} className="cursor-pointer border-border/40 hover:bg-accent/40">
@@ -182,39 +182,39 @@ export function MembersDirectory() {
                         </Avatar>
                         <div className="min-w-0">
                           <div className="text-sm font-medium truncate">{m.name}</div>
-                          <div className="text-xs text-muted-foreground">{m.id} · {PLAN_LABEL[m.plan]}</div>
+                          <div className="text-xs text-muted-foreground"><bdi dir="ltr">{m.id}</bdi> · <bdi dir="ltr">{PLAN_LABEL[m.plan]}</bdi></div>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground font-mono">{m.cin}</TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground font-mono"><bdi dir="ltr">{m.cin}</bdi></TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <Badge variant="outline" className={m.gender === "male" ? "border-mens/40 text-mens bg-mens/10" : "border-womens/40 text-womens bg-womens/10"}>
-                        {m.gender === "male" ? "Male" : "Female"}
+                        {m.gender === "male" ? t("gender.male") : t("gender.female")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm font-medium">
-                      {eff === "frozen" ? <span className="text-sky-300">paused</span>
+                      {eff === "frozen" ? <span className="text-sky-300">{t("status.paused")}</span>
                         : d === 0 ? <span className="text-destructive">—</span>
-                        : `${d}d`}
+                        : <bdi>{d}d</bdi>}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`border ${s.cls}`}>{s.label}</Badge>
                     </TableCell>
-                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="text-end" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
                         <Button size="sm" variant="secondary" className="h-8" onClick={() => setRenewFor(m)}>
-                          <RefreshCw className="size-3.5" /> Renew
+                          <RefreshCw className="size-3.5" /> {t("action.renew")}
                         </Button>
                         {isAtRisk && <WhatsAppButton member={m} tone="renew" />}
                         {eff === "frozen" ? (
                           <Button size="sm" variant="outline"
                             className="border-sky-500/40 text-sky-300 hover:bg-sky-500/10"
                             onClick={() => { gymStore.unfreeze(m.id); toast.success(`${m.name} unfrozen`); }}>
-                            <Snowflake className="size-3.5" /> Unfreeze
+                            <Snowflake className="size-3.5" /> {t("action.unfreeze")}
                           </Button>
                         ) : (
                           <Button size="sm" variant="ghost" className="text-sky-300 hover:bg-sky-500/10" onClick={() => setFreezeFor(m)}>
-                            <Snowflake className="size-3.5" /> Freeze
+                            <Snowflake className="size-3.5" /> {t("action.freeze")}
                           </Button>
                         )}
                       </div>

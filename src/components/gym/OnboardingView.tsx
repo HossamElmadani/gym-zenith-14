@@ -183,7 +183,7 @@ export function OnboardingView() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name">Full name</Label>
+              <Label htmlFor="name">{t("form.fullName")}</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Sofia Martin" className="bg-background/50" />
             </div>
 

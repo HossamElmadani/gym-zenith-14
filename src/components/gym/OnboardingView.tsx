@@ -225,7 +225,7 @@ export function OnboardingView() {
 
             <div className="md:col-span-2 space-y-1.5">
               <Label className="flex items-center gap-1.5">
-                <Dumbbell className="size-3.5 text-primary" /> Assign coach (optional)
+                <Dumbbell className="size-3.5 text-primary" /> {t("form.assignCoach")}
               </Label>
               <Select
                 value={coachId}

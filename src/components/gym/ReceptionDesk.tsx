@@ -32,6 +32,7 @@ const initials = (n: string) =>
   n.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
 export function ReceptionDesk() {
+  const { t } = useI18n();
   const today = useMemo(() => new Date(), []);
   const shift = useCurrentShift();
   const mode: ShiftAudience = shift.audience;

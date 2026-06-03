@@ -200,12 +200,12 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Salma Idrissi" className="bg-background/50" />
           </div>
           <div className="space-y-1.5">
-            <Label>Specialty</Label>
+            <Label>{t("form.specialty")}</Label>
             <Input value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder="e.g. Aerobics, Bodybuilding" className="bg-background/50" />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Target audience</Label>
+            <Label>{t("form.targetAudience")}</Label>
             <RadioGroup value={audience} onValueChange={(v) => onAudienceChange(v as CoachAudience)} className="grid grid-cols-2 gap-2">
               <label className={cn("flex items-center gap-2 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors",
                 audience === "men" ? "border-blue-500/60 bg-blue-500/10" : "border-border/60 hover:bg-accent/40")}>

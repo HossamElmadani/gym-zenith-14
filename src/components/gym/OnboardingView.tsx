@@ -294,7 +294,7 @@ export function OnboardingView() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label>Plan</Label>
+              <Label>{t("form.plan")}</Label>
               <Select value={plan} onValueChange={(v) => onPlanChange(v as PlanCode)}>
                 <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
                 <SelectContent>

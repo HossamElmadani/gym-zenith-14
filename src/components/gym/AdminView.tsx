@@ -116,7 +116,7 @@ export function AdminView({ todayMode, dayLabel }: Props) {
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{m.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {d} day{d === 1 ? "" : "s"} · {m.phone}
+                        <bdi>{d}d</bdi> · <bdi dir="ltr">{m.phone}</bdi>
                       </div>
                     </div>
                     <WhatsAppButton member={m} tone="renew" />

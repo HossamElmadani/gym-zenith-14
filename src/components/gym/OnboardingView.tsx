@@ -326,7 +326,7 @@ export function OnboardingView() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>End date</Label>
+              <Label>{t("form.endDate")}</Label>
               <div className="rounded-md border border-input bg-muted/40 px-3 h-9 flex items-center justify-between">
                 <span className="text-sm">{tzFormatDate(endDate)}</span>
                 <Badge variant="secondary" className="bg-accent text-foreground text-[10px]">auto</Badge>

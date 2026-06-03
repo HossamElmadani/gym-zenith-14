@@ -204,17 +204,17 @@ export function OnboardingView() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="phone">Phone number</Label>
-              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+212 600 000 000" className="bg-background/50" />
+              <Label htmlFor="phone">{t("form.phone")}</Label>
+              <Input id="phone" type="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+212 600 000 000" className="bg-background/50" />
             </div>
 
             <div className="space-y-1.5">
-              <Label>Gender</Label>
+              <Label>{t("form.gender")}</Label>
               <Select value={gender || undefined} onValueChange={(v) => { setGender(v as "male" | "female"); setCoachId("none"); }}>
-                <SelectTrigger className="bg-background/50"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectTrigger className="bg-background/50"><SelectValue placeholder={t("form.selectGender")} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="male">{t("gender.male")}</SelectItem>
+                  <SelectItem value="female">{t("gender.female")}</SelectItem>
                 </SelectContent>
               </Select>
               <p className={cn("text-xs flex items-start gap-1.5 mt-1", gender ? "text-foreground/80" : "text-muted-foreground")}>

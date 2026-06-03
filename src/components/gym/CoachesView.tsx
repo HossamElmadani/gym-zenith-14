@@ -186,7 +186,7 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
   return (
     <Dialog open={open} onOpenChange={(b) => { setOpen(b); if (!b) reset(); else { setAudience(defaultAudience); setDays(ALLOWED_DAYS[defaultAudience]); } }}>
       <DialogTrigger asChild>
-        <Button className="gap-1.5"><Plus className="size-4" /> Add Coach</Button>
+        <Button className="gap-1.5"><Plus className="size-4" /> {t("action.addCoach")}</Button>
       </DialogTrigger>
       <DialogContent className="glass border-border/60 sm:max-w-md">
         <DialogHeader>

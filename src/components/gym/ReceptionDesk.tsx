@@ -112,24 +112,25 @@ export function ReceptionDesk() {
                 Reception scanner · {label} · {allowedLabel}
               </div>
               <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
-                Scan QR or enter CIN / ID
+                {t("reception.scannerTitle")}
               </h2>
               <div className="relative w-full max-w-xl">
-                <ScanLine className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-primary" />
+                <ScanLine className="absolute start-4 top-1/2 -translate-y-1/2 size-5 text-primary" />
                 <Input
                   ref={inputRef}
                   autoFocus
+                  dir="ltr"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && evaluate()}
                   placeholder="e.g. M-1041 or AB123456"
-                  className="h-16 pl-12 pr-32 text-lg bg-background/50 rounded-xl tracking-wide"
+                  className="h-16 ps-12 pe-32 text-lg bg-background/50 rounded-xl tracking-wide"
                 />
                 <Button
                   onClick={evaluate}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-12 px-6"
+                  className="absolute end-2 top-1/2 -translate-y-1/2 h-12 px-6"
                 >
-                  Validate
+                  {t("action.validate")}
                 </Button>
               </div>
               <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">

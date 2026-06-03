@@ -49,7 +49,7 @@ export function GymSidebar({ view, onChange, accentLabel, role }: Props) {
               )}
             >
               <it.icon className={cn("size-4", active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
-              <span>{it.label}</span>
+              <span>{t(it.tKey)}</span>
             </button>
           );
         })}

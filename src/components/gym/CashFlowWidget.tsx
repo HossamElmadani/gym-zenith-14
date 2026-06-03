@@ -1,12 +1,14 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { cashCollectedToday, expiringValueThisWeek, useGymStore } from "@/lib/gym-store";
+import { useI18n } from "@/lib/i18n";
 
 const money = (n: number) =>
   new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(n) + " MAD";
 
 export function CashFlowWidget() {
   useGymStore((s) => s.v);
+  const { t } = useI18n();
 
   const collected = cashCollectedToday();
   const atRisk = expiringValueThisWeek();
@@ -15,7 +17,7 @@ export function CashFlowWidget() {
     <Card className="glass rounded-2xl">
       <CardContent className="p-5">
         <div className="text-xs uppercase tracking-widest text-muted-foreground">
-          Today's cash flow
+          {t("metric.cashFlow")}
         </div>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">

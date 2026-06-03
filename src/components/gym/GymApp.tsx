@@ -22,15 +22,20 @@ import { useAuth } from "@/lib/auth";
 import { dayName } from "@/lib/gym-data";
 import { useCurrentShift } from "@/lib/gym-shift";
 
+import { useAuth } from "@/lib/auth";
+import { dayName } from "@/lib/gym-data";
+import { useCurrentShift } from "@/lib/gym-shift";
+import { useI18n, type DictKey } from "@/lib/i18n";
+
 type View = "admin" | "members" | "onboard" | "reception" | "coaches" | "staff";
 
-const TABS: { key: View; label: string; icon: typeof Users; roles: Array<"owner" | "receptionist"> }[] = [
-  { key: "admin",     label: "Dashboard", icon: Users,     roles: ["owner"] },
-  { key: "members",   label: "Members",   icon: BookUser,  roles: ["owner", "receptionist"] },
-  { key: "reception", label: "Reception", icon: ScanLine,  roles: ["owner", "receptionist"] },
-  { key: "onboard",   label: "Onboard",   icon: UserPlus,  roles: ["owner", "receptionist"] },
-  { key: "coaches",   label: "Coaches",   icon: Dumbbell,  roles: ["owner", "receptionist"] },
-  { key: "staff",     label: "Staff",     icon: Shield,    roles: ["owner"] },
+const TABS: { key: View; label: string; tKey: DictKey; icon: typeof Users; roles: Array<"owner" | "receptionist"> }[] = [
+  { key: "admin",     label: "Dashboard", tKey: "nav.dashboard", icon: Users,     roles: ["owner"] },
+  { key: "members",   label: "Members",   tKey: "nav.members",   icon: BookUser,  roles: ["owner", "receptionist"] },
+  { key: "reception", label: "Reception", tKey: "nav.reception", icon: ScanLine,  roles: ["owner", "receptionist"] },
+  { key: "onboard",   label: "Onboard",   tKey: "nav.onboard",   icon: UserPlus,  roles: ["owner", "receptionist"] },
+  { key: "coaches",   label: "Coaches",   tKey: "nav.coaches",   icon: Dumbbell,  roles: ["owner", "receptionist"] },
+  { key: "staff",     label: "Staff",     tKey: "nav.staff",     icon: Shield,    roles: ["owner"] },
 ];
 
 export function GymApp() {

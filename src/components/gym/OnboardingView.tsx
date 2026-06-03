@@ -336,7 +336,7 @@ export function OnboardingView() {
             <div className="space-y-1.5 pt-2 border-t border-border/40">
               <Label className="flex items-center gap-1.5">
                 <Wallet className="size-3.5 text-success" />
-                Cash amount paid (MAD)
+                {t("form.cashAmount")}
               </Label>
               <Input
                 type="number"

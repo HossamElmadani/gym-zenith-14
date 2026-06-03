@@ -88,16 +88,16 @@ export function AdminView({ todayMode, dayLabel }: Props) {
       <Card className="glass rounded-2xl xl:col-span-3 border-warning/30 bg-warning/5">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="size-4 text-warning" /> Expiring Soon
+            <AlertTriangle className="size-4 text-warning" /> {t("admin.expiringSoon")}
           </CardTitle>
           <Badge className="bg-warning/20 text-warning border border-warning/40">
-            {expiringSoon.length} member{expiringSoon.length === 1 ? "" : "s"}
+            <bdi>{expiringSoon.length}</bdi>
           </Badge>
         </CardHeader>
         <CardContent>
           {expiringSoon.length === 0 ? (
             <div className="text-sm text-muted-foreground py-6 text-center">
-              No renewals due this week. 🎉
+              <bdi>{t("admin.noRenewals")}</bdi> 🎉
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
@@ -116,7 +116,7 @@ export function AdminView({ todayMode, dayLabel }: Props) {
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{m.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {d} day{d === 1 ? "" : "s"} · {m.phone}
+                        <bdi>{d}d</bdi> · <bdi dir="ltr">{m.phone}</bdi>
                       </div>
                     </div>
                     <WhatsAppButton member={m} tone="renew" />

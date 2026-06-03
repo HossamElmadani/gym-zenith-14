@@ -22,10 +22,12 @@ import { tzAddMonthsISO, tzFormatDate, tzTodayISO } from "@/lib/gym-tz";
 import { gymStore } from "@/lib/gym-store";
 import { MemberQR } from "./MemberQR";
 import { ReceiptDialog, type ReceiptPayload } from "./ReceiptDialog";
+import { useI18n } from "@/lib/i18n";
 
 type CinStatus = "idle" | "checking" | "ok" | "duplicate";
 
 export function OnboardingView() {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [cin, setCin] = useState("");
   const [cinStatus, setCinStatus] = useState<CinStatus>("idle");
@@ -181,7 +183,7 @@ export function OnboardingView() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name">Full name</Label>
+              <Label htmlFor="name">{t("form.fullName")}</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Sofia Martin" className="bg-background/50" />
             </div>
 
@@ -202,17 +204,17 @@ export function OnboardingView() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="phone">Phone number</Label>
-              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+212 600 000 000" className="bg-background/50" />
+              <Label htmlFor="phone">{t("form.phone")}</Label>
+              <Input id="phone" type="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+212 600 000 000" className="bg-background/50" />
             </div>
 
             <div className="space-y-1.5">
-              <Label>Gender</Label>
+              <Label>{t("form.gender")}</Label>
               <Select value={gender || undefined} onValueChange={(v) => { setGender(v as "male" | "female"); setCoachId("none"); }}>
-                <SelectTrigger className="bg-background/50"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectTrigger className="bg-background/50"><SelectValue placeholder={t("form.selectGender")} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="male">{t("gender.male")}</SelectItem>
+                  <SelectItem value="female">{t("gender.female")}</SelectItem>
                 </SelectContent>
               </Select>
               <p className={cn("text-xs flex items-start gap-1.5 mt-1", gender ? "text-foreground/80" : "text-muted-foreground")}>
@@ -223,7 +225,7 @@ export function OnboardingView() {
 
             <div className="md:col-span-2 space-y-1.5">
               <Label className="flex items-center gap-1.5">
-                <Dumbbell className="size-3.5 text-primary" /> Assign coach (optional)
+                <Dumbbell className="size-3.5 text-primary" /> {t("form.assignCoach")}
               </Label>
               <Select
                 value={coachId}
@@ -235,10 +237,10 @@ export function OnboardingView() {
                   gender === "male" && "border-blue-500/40",
                   gender === "female" && "border-rose-500/40",
                 )}>
-                  <SelectValue placeholder={gender ? "Select a coach" : "Pick gender first"} />
+                  <SelectValue placeholder={gender ? t("form.selectCoach") : t("form.pickGenderFirst")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">— None —</SelectItem>
+                  <SelectItem value="none">{t("form.none")}</SelectItem>
                   {eligibleCoaches.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       <span className="flex items-center gap-2">
@@ -292,7 +294,7 @@ export function OnboardingView() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label>Plan</Label>
+              <Label>{t("form.plan")}</Label>
               <Select value={plan} onValueChange={(v) => onPlanChange(v as PlanCode)}>
                 <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -309,7 +311,7 @@ export function OnboardingView() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Start date</Label>
+              <Label>{t("form.startDate")}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button type="button" variant="outline" className="w-full justify-start font-normal bg-background/50">
@@ -324,7 +326,7 @@ export function OnboardingView() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>End date</Label>
+              <Label>{t("form.endDate")}</Label>
               <div className="rounded-md border border-input bg-muted/40 px-3 h-9 flex items-center justify-between">
                 <span className="text-sm">{tzFormatDate(endDate)}</span>
                 <Badge variant="secondary" className="bg-accent text-foreground text-[10px]">auto</Badge>
@@ -334,7 +336,7 @@ export function OnboardingView() {
             <div className="space-y-1.5 pt-2 border-t border-border/40">
               <Label className="flex items-center gap-1.5">
                 <Wallet className="size-3.5 text-success" />
-                Cash amount paid (MAD)
+                {t("form.cashAmount")}
               </Label>
               <Input
                 type="number"

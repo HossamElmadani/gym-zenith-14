@@ -23,6 +23,7 @@ import { MEMBERS, todayGender, daysRemaining, subStatus, type Member } from "@/l
 import { useGymStore, gymStore } from "@/lib/gym-store";
 import { tzDayOfWeek } from "@/lib/gym-tz";
 import { buildWaLink } from "./WhatsAppButton";
+import { useI18n } from "@/lib/i18n";
 
 const audienceTheme = {
   men:   { ring: "ring-blue-500/40", border: "border-blue-500/40", bg: "bg-blue-500/10", text: "text-blue-300", chip: "bg-blue-500/15 text-blue-300 border-blue-500/30", dot: "bg-blue-500", label: "Men Only" },
@@ -138,6 +139,7 @@ function CoachGrid({ coaches, onSelect }: { coaches: Coach[]; onSelect: (c: Coac
 }
 
 function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; setOpen: (b: boolean) => void; defaultAudience: CoachAudience }) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [audience, setAudience] = useState<CoachAudience>(defaultAudience);
@@ -184,7 +186,7 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
   return (
     <Dialog open={open} onOpenChange={(b) => { setOpen(b); if (!b) reset(); else { setAudience(defaultAudience); setDays(ALLOWED_DAYS[defaultAudience]); } }}>
       <DialogTrigger asChild>
-        <Button className="gap-1.5"><Plus className="size-4" /> Add Coach</Button>
+        <Button className="gap-1.5"><Plus className="size-4" /> {t("action.addCoach")}</Button>
       </DialogTrigger>
       <DialogContent className="glass border-border/60 sm:max-w-md">
         <DialogHeader>
@@ -198,12 +200,12 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Salma Idrissi" className="bg-background/50" />
           </div>
           <div className="space-y-1.5">
-            <Label>Specialty</Label>
+            <Label>{t("form.specialty")}</Label>
             <Input value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder="e.g. Aerobics, Bodybuilding" className="bg-background/50" />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Target audience</Label>
+            <Label>{t("form.targetAudience")}</Label>
             <RadioGroup value={audience} onValueChange={(v) => onAudienceChange(v as CoachAudience)} className="grid grid-cols-2 gap-2">
               <label className={cn("flex items-center gap-2 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors",
                 audience === "men" ? "border-blue-500/60 bg-blue-500/10" : "border-border/60 hover:bg-accent/40")}>
@@ -222,7 +224,7 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
           </div>
 
           <div className="space-y-1.5">
-            <Label>Working days</Label>
+            <Label>{t("form.workingDays")}</Label>
             <div className="grid grid-cols-7 gap-1.5">
               {WEEKDAYS.map((w) => {
                 const allowed = isDayAllowed(audience, w.idx);
@@ -257,19 +259,19 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> Start time</Label>
+              <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> {t("form.startTime")}</Label>
               <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="bg-background/50" />
             </div>
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> End time</Label>
+              <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> {t("form.endTime")}</Label>
               <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="bg-background/50" />
             </div>
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={submit}>Add coach</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>{t("action.cancel")}</Button>
+          <Button onClick={submit}>{t("action.addCoach")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -28,15 +28,17 @@ import { FreezeDialog } from "./FreezeDialog";
 import { RenewDialog } from "./RenewDialog";
 import { MemberQR } from "./MemberQR";
 import { gymStore, isFrozenToday, useGymStore } from "@/lib/gym-store";
+import { useI18n } from "@/lib/i18n";
 
 const initials = (n: string) => n.split(" ").map((x) => x[0]).slice(0, 2).join("");
 
-function statusMeta(s: ReturnType<typeof subStatus> | "frozen") {
-  if (s === "active")    return { label: "Active",        cls: "bg-success/15 text-success border-success/30" };
-  if (s === "expiring")  return { label: "Expiring Soon", cls: "bg-warning/15 text-warning border-warning/30" };
-  if (s === "frozen")    return { label: "Frozen",        cls: "bg-sky-500/15 text-sky-300 border-sky-500/40" };
-  return                        { label: "Expired",       cls: "bg-destructive/15 text-destructive border-destructive/30" };
+function statusMeta(s: ReturnType<typeof subStatus> | "frozen", t: (k: import("@/lib/i18n").DictKey) => string) {
+  if (s === "active")    return { label: t("status.active"),   cls: "bg-success/15 text-success border-success/30" };
+  if (s === "expiring")  return { label: t("status.expiring"), cls: "bg-warning/15 text-warning border-warning/30" };
+  if (s === "frozen")    return { label: t("status.frozen"),   cls: "bg-sky-500/15 text-sky-300 border-sky-500/40" };
+  return                        { label: t("status.expired"),  cls: "bg-destructive/15 text-destructive border-destructive/30" };
 }
+
 
 export function MembersDirectory() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "expiring" | "expired" | "frozen">("all");

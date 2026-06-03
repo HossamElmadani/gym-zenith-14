@@ -23,6 +23,7 @@ import { MEMBERS, todayGender, daysRemaining, subStatus, type Member } from "@/l
 import { useGymStore, gymStore } from "@/lib/gym-store";
 import { tzDayOfWeek } from "@/lib/gym-tz";
 import { buildWaLink } from "./WhatsAppButton";
+import { useI18n } from "@/lib/i18n";
 
 const audienceTheme = {
   men:   { ring: "ring-blue-500/40", border: "border-blue-500/40", bg: "bg-blue-500/10", text: "text-blue-300", chip: "bg-blue-500/15 text-blue-300 border-blue-500/30", dot: "bg-blue-500", label: "Men Only" },

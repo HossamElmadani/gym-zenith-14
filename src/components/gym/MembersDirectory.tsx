@@ -41,6 +41,7 @@ function statusMeta(s: ReturnType<typeof subStatus> | "frozen", t: (k: import("@
 
 
 export function MembersDirectory() {
+  const { t } = useI18n();
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "expiring" | "expired" | "frozen">("all");
   const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
   const [query, setQuery] = useState("");

@@ -259,19 +259,19 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> Start time</Label>
+              <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> {t("form.startTime")}</Label>
               <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="bg-background/50" />
             </div>
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> End time</Label>
+              <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> {t("form.endTime")}</Label>
               <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="bg-background/50" />
             </div>
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={submit}>Add coach</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>{t("action.cancel")}</Button>
+          <Button onClick={submit}>{t("action.addCoach")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

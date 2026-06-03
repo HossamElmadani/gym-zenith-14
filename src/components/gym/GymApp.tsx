@@ -88,40 +88,52 @@ function Workspace() {
             <span className="text-sm text-muted-foreground hidden sm:inline">{accentLabel}</span>
           </div>
 
-          <div className="hidden md:flex relative flex-1 max-w-sm ml-2">
-            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search members…" className="pl-9 bg-background/50" />
+          <div className="hidden md:flex relative flex-1 max-w-sm ms-2">
+            <Search className="size-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder={t("search.members")} className="ps-9 bg-background/50" />
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ms-auto flex items-center gap-2">
             <div className="flex items-center rounded-xl border border-border/60 bg-card/40 p-1 overflow-x-auto">
-              {visibleTabs.map((t) => (
+              {visibleTabs.map((tab) => (
                 <button
-                  key={t.key}
-                  onClick={() => setView(t.key)}
+                  key={tab.key}
+                  onClick={() => setView(tab.key)}
                   className={cn(
                     "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all whitespace-nowrap",
-                    view === t.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                    view === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  <t.icon className="size-3.5" /> {t.label}
+                  <tab.icon className="size-3.5" /> {t(tab.tKey)}
                 </button>
               ))}
             </div>
 
-            <Button size="icon" variant="ghost" className="hover:bg-accent">
+            <button
+              onClick={toggle}
+              aria-label="Toggle language"
+              className="h-9 px-2.5 rounded-lg border border-border/60 bg-card/40 hover:bg-accent transition flex items-center gap-1 text-xs font-semibold"
+            >
+              <span className={cn(lang === "ar" ? "text-primary" : "text-muted-foreground")}>AR</span>
+              <span className="text-muted-foreground">/</span>
+              <span className={cn(lang === "en" ? "text-primary" : "text-muted-foreground")}>EN</span>
+            </button>
+
+            <Button size="icon" variant="ghost" className="hover:bg-accent" aria-label={t("common.notify")}>
               <Bell className="size-4" />
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 border border-border/60 bg-card/40 hover:bg-accent transition">
+                <button className="flex items-center gap-2 rounded-full ps-1 pe-3 py-1 border border-border/60 bg-card/40 hover:bg-accent transition">
                   <div className="size-8 rounded-full bg-gradient-to-br from-primary to-primary/40 grid place-items-center text-xs font-semibold text-primary-foreground">
                     {user!.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
                   </div>
-                  <div className="hidden sm:block text-left">
+                  <div className="hidden sm:block text-start">
                     <div className="text-xs font-medium leading-tight">{user!.name}</div>
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{role}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {role === "owner" ? t("role.owner") : t("role.receptionist")}
+                    </div>
                   </div>
                 </button>
               </DropdownMenuTrigger>
@@ -132,7 +144,7 @@ function Workspace() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive focus:bg-destructive/15">
-                  <LogOut className="size-4" /> Logout
+                  <LogOut className="size-4" /> {t("auth.logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

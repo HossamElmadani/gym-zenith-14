@@ -139,6 +139,7 @@ function CoachGrid({ coaches, onSelect }: { coaches: Coach[]; onSelect: (c: Coac
 }
 
 function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; setOpen: (b: boolean) => void; defaultAudience: CoachAudience }) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [audience, setAudience] = useState<CoachAudience>(defaultAudience);

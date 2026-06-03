@@ -10,6 +10,7 @@ import { MEMBERS, dayName, daysRemaining, type Member } from "@/lib/gym-data";
 import { useCurrentShift, type ShiftAudience } from "@/lib/gym-shift";
 import { WhatsAppButton } from "./WhatsAppButton";
 import { FreezeDialog } from "./FreezeDialog";
+import { useI18n } from "@/lib/i18n";
 
 type Entry = {
   ts: string;

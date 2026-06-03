@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 export type Lang = "ar" | "en";
 
@@ -27,18 +27,76 @@ export const DICT = {
   "head.staff.title":     { ar: "فريق العمل والصلاحيات",          en: "Staff & Access" },
   "head.staff.sub":       { ar: "إدارة الحسابات والصلاحيات.",     en: "Manage who can sign in." },
 
-  // Actions
+  // Actions / buttons
   "action.addCoach":      { ar: "إضافة مدرب",       en: "Add Coach" },
   "action.assignMember":  { ar: "تعيين متدرب",      en: "Assign Member" },
   "action.freeze":        { ar: "تجميد",            en: "Freeze" },
+  "action.unfreeze":      { ar: "إلغاء التجميد",    en: "Unfreeze" },
+  "action.renew":         { ar: "تجديد",            en: "Renew" },
   "action.checkin":       { ar: "تسجيل الدخول",     en: "Check-in" },
   "action.logCash":       { ar: "إدخال كاش",        en: "Log Cash" },
+  "action.validate":      { ar: "تحقق",             en: "Validate" },
+  "action.register":      { ar: "تسجيل",            en: "Register" },
+  "action.cancel":        { ar: "إلغاء",            en: "Cancel" },
+
+  // Table headers
+  "table.member":         { ar: "العضو",            en: "Member" },
+  "table.cin":            { ar: "البطاقة الوطنية",   en: "CIN" },
+  "table.gender":         { ar: "الجنس",            en: "Gender" },
+  "table.daysLeft":       { ar: "الأيام المتبقية",  en: "Days Left" },
+  "table.status":         { ar: "الحالة",           en: "Status" },
+  "table.actions":        { ar: "إجراءات",          en: "Actions" },
+  "table.phone":          { ar: "الهاتف",           en: "Phone" },
+
+  // Status labels
+  "status.active":        { ar: "نشط",              en: "Active" },
+  "status.expiring":      { ar: "قارب الانتهاء",    en: "Expiring Soon" },
+  "status.expired":       { ar: "منتهي",            en: "Expired" },
+  "status.frozen":        { ar: "مجمّد",            en: "Frozen" },
+  "status.paused":        { ar: "موقوف",            en: "paused" },
+
+  // Filters
+  "filter.allStatuses":   { ar: "كل الحالات",       en: "All statuses" },
+  "filter.allGenders":    { ar: "كل الأجناس",       en: "All genders" },
+  "gender.male":          { ar: "ذكر",              en: "Male" },
+  "gender.female":        { ar: "أنثى",             en: "Female" },
+  "gender.men":           { ar: "رجال",             en: "Men" },
+  "gender.women":         { ar: "نساء",             en: "Women" },
+
+  // Form fields
+  "form.fullName":        { ar: "الاسم الكامل",     en: "Full name" },
+  "form.phone":           { ar: "رقم الهاتف",       en: "Phone number" },
+  "form.gender":          { ar: "الجنس",            en: "Gender" },
+  "form.cin":             { ar: "البطاقة الوطنية",   en: "CIN / National ID" },
+  "form.assignCoach":     { ar: "تعيين مدرب",       en: "Assign coach" },
+  "form.startDate":       { ar: "تاريخ البدء",      en: "Start date" },
+  "form.endDate":         { ar: "تاريخ الانتهاء",   en: "End date" },
+  "form.plan":            { ar: "الاشتراك",         en: "Plan" },
+  "form.cashAmount":      { ar: "المبلغ المدفوع (درهم)", en: "Cash amount paid (MAD)" },
+  "form.selectGender":    { ar: "اختر الجنس",       en: "Select" },
+  "form.none":            { ar: "— لا أحد —",       en: "— None —" },
+  "form.pickGenderFirst": { ar: "اختر الجنس أولًا",  en: "Pick gender first" },
+  "form.selectCoach":     { ar: "اختر مدربًا",      en: "Select a coach" },
+  "form.specialty":       { ar: "التخصص",           en: "Specialty" },
+  "form.targetAudience":  { ar: "الفئة المستهدفة",  en: "Target audience" },
+  "form.workingDays":     { ar: "أيام العمل",       en: "Working days" },
+  "form.startTime":       { ar: "وقت البدء",        en: "Start time" },
+  "form.endTime":         { ar: "وقت الانتهاء",     en: "End time" },
 
   // Metrics
   "metric.activeToday":   { ar: "حاضرون اليوم",                en: "Active today" },
   "metric.cashToday":     { ar: "مداخيل اليوم — درهم",          en: "Cash collected today" },
   "metric.expiringWeek":  { ar: "ينتهي هذا الأسبوع",           en: "Expiring this week" },
   "metric.cashFlow":      { ar: "تدفّق النقد اليوم",            en: "Today's cash flow" },
+
+  // Reception
+  "reception.scannerTitle":   { ar: "امسح QR أو أدخل CIN / رقم العضو", en: "Scan QR or enter CIN / ID" },
+  "reception.scannerLabel":   { ar: "ماسح الاستقبال",                 en: "Reception scanner" },
+
+  // Admin
+  "admin.expiringSoon":       { ar: "قارب اشتراكهم على الانتهاء",      en: "Expiring Soon" },
+  "admin.noRenewals":         { ar: "لا توجد تجديدات هذا الأسبوع",     en: "No renewals due this week" },
+  "admin.dueIn7":             { ar: "أعضاء يستوجبون التجديد خلال أقل من ٧ أيام", en: "Members due to renew in < 7 days" },
 
   // Shift
   "shift.men":            { ar: "الدوام الحالي: رجال",          en: "Active Shift: Men" },
@@ -52,18 +110,24 @@ export const DICT = {
 
   // Misc
   "search.members":       { ar: "ابحث عن عضو…",                 en: "Search members…" },
+  "search.byNameCinId":   { ar: "ابحث بالاسم أو CIN أو رقم العضو…", en: "Search by name, CIN, or ID…" },
   "common.notify":        { ar: "الإشعارات",                    en: "Notifications" },
+  "common.of":            { ar: "من",                           en: "of" },
 } as const satisfies Dict;
 
 export type DictKey = keyof typeof DICT;
 
-const I18nCtx = createContext<{
+type I18nCtxValue = {
   lang: Lang;
   setLang: (l: Lang) => void;
   toggle: () => void;
   t: (k: DictKey) => string;
   dir: "rtl" | "ltr";
-}>({ lang: "ar", setLang: () => {}, toggle: () => {}, t: (k) => k, dir: "rtl" });
+};
+
+const I18nCtx = createContext<I18nCtxValue>({
+  lang: "ar", setLang: () => {}, toggle: () => {}, t: (k) => k, dir: "rtl",
+});
 
 const STORAGE = "pulse.lang";
 
@@ -79,14 +143,19 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     if (typeof document === "undefined") return;
     document.documentElement.setAttribute("dir", dir);
     document.documentElement.setAttribute("lang", lang);
-    try { localStorage.setItem(STORAGE, lang); } catch {}
+    try { localStorage.setItem(STORAGE, lang); } catch { /* ignore */ }
   }, [lang, dir]);
 
-  const setLang = (l: Lang) => setLangState(l);
-  const toggle = () => setLangState((p) => (p === "ar" ? "en" : "ar"));
-  const t = (k: DictKey) => DICT[k]?.[lang] ?? k;
+  const setLang = useCallback((l: Lang) => setLangState(l), []);
+  const toggle = useCallback(() => setLangState((p) => (p === "ar" ? "en" : "ar")), []);
+  const t = useCallback((k: DictKey) => DICT[k]?.[lang] ?? k, [lang]);
 
-  return <I18nCtx.Provider value={{ lang, setLang, toggle, t, dir }}>{children}</I18nCtx.Provider>;
+  const value = useMemo<I18nCtxValue>(
+    () => ({ lang, setLang, toggle, t, dir }),
+    [lang, setLang, toggle, t, dir],
+  );
+
+  return <I18nCtx.Provider value={value}>{children}</I18nCtx.Provider>;
 }
 
 export function useI18n() {

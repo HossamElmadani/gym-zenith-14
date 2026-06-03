@@ -1,5 +1,6 @@
 import { Dumbbell, LayoutDashboard, Users, ScanLine, UserPlus, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n, type DictKey } from "@/lib/i18n";
 
 type View = "admin" | "members" | "reception" | "onboard" | "coaches" | "staff";
 
@@ -10,16 +11,17 @@ type Props = {
   role: "owner" | "receptionist";
 };
 
-const ALL: { key: View; icon: typeof Users; label: string; roles: Array<"owner" | "receptionist"> }[] = [
-  { key: "admin",     icon: LayoutDashboard, label: "Dashboard",  roles: ["owner"] },
-  { key: "members",   icon: Users,           label: "Members",    roles: ["owner", "receptionist"] },
-  { key: "reception", icon: ScanLine,        label: "Reception",  roles: ["owner", "receptionist"] },
-  { key: "onboard",   icon: UserPlus,        label: "Onboard",    roles: ["owner", "receptionist"] },
-  { key: "coaches",   icon: Dumbbell,        label: "Coaches",    roles: ["owner", "receptionist"] },
-  { key: "staff",     icon: Shield,          label: "Staff",      roles: ["owner"] },
+const ALL: { key: View; icon: typeof Users; tKey: DictKey; roles: Array<"owner" | "receptionist"> }[] = [
+  { key: "admin",     icon: LayoutDashboard, tKey: "nav.dashboard", roles: ["owner"] },
+  { key: "members",   icon: Users,           tKey: "nav.members",   roles: ["owner", "receptionist"] },
+  { key: "reception", icon: ScanLine,        tKey: "nav.reception", roles: ["owner", "receptionist"] },
+  { key: "onboard",   icon: UserPlus,        tKey: "nav.onboard",   roles: ["owner", "receptionist"] },
+  { key: "coaches",   icon: Dumbbell,        tKey: "nav.coaches",   roles: ["owner", "receptionist"] },
+  { key: "staff",     icon: Shield,          tKey: "nav.staff",     roles: ["owner"] },
 ];
 
 export function GymSidebar({ view, onChange, accentLabel, role }: Props) {
+  const { t } = useI18n();
   const items = ALL.filter((i) => i.roles.includes(role));
   return (
     <aside className="hidden lg:flex w-60 shrink-0 flex-col gap-5 p-4 bg-card/30 border border-border/40 rounded-2xl m-3 sticky top-3 h-[calc(100vh-1.5rem)]">

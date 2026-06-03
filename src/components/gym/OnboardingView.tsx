@@ -311,7 +311,7 @@ export function OnboardingView() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Start date</Label>
+              <Label>{t("form.startDate")}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button type="button" variant="outline" className="w-full justify-start font-normal bg-background/50">

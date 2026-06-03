@@ -237,10 +237,10 @@ export function OnboardingView() {
                   gender === "male" && "border-blue-500/40",
                   gender === "female" && "border-rose-500/40",
                 )}>
-                  <SelectValue placeholder={gender ? "Select a coach" : "Pick gender first"} />
+                  <SelectValue placeholder={gender ? t("form.selectCoach") : t("form.pickGenderFirst")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">— None —</SelectItem>
+                  <SelectItem value="none">{t("form.none")}</SelectItem>
                   {eligibleCoaches.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       <span className="flex items-center gap-2">

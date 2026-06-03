@@ -42,6 +42,7 @@ export function GymApp() {
 
 function Workspace() {
   const { user, logout } = useAuth();
+  const { t, lang, toggle } = useI18n();
   const role = user!.role;
   const initialView: View = role === "receptionist" ? "reception" : "admin";
   const [view, setView] = useState<View>(initialView);
@@ -52,25 +53,25 @@ function Workspace() {
 
   const themeClass = mode === "women" ? "theme-womens" : mode === "closed" ? "theme-neutral" : "";
   const shiftLabel =
-    mode === "men" ? "Active Shift: Men"
-      : mode === "women" ? "Active Shift: Women"
-      : "Transition / Closed";
+    mode === "men" ? t("shift.men")
+      : mode === "women" ? t("shift.women")
+      : t("shift.closed");
   const shiftBadgeClass =
     mode === "men" ? "bg-blue-500/20 text-blue-200 border border-blue-500/40"
       : mode === "women" ? "bg-rose-500/20 text-rose-200 border border-rose-500/40"
       : "bg-muted/40 text-muted-foreground border border-border/60";
   const accentLabel = shift.label;
 
-  const visibleTabs = TABS.filter((t) => t.roles.includes(role));
-  const allowed = visibleTabs.some((t) => t.key === view);
+  const visibleTabs = TABS.filter((tab) => tab.roles.includes(role));
+  const allowed = visibleTabs.some((tab) => tab.key === view);
 
   const headings: Record<View, { title: string; sub: string }> = {
-    admin:     { title: "Today's Overview",        sub: "Active members, cash collected and renewals — at a glance." },
-    members:   { title: "Members",                 sub: "Search, renew, freeze and reach members." },
-    reception: { title: "Reception Check-in Desk", sub: "Scan QR or CIN to validate access." },
-    onboard:   { title: "New Member",              sub: "Register a member, take cash and print a receipt." },
-    coaches:   { title: "Coaches & Groups",        sub: "Men's and Women's coaches — fully isolated to prevent human error." },
-    staff:     { title: "Staff & Access",          sub: "Manage who can sign in." },
+    admin:     { title: t("head.admin.title"),     sub: t("head.admin.sub") },
+    members:   { title: t("head.members.title"),   sub: t("head.members.sub") },
+    reception: { title: t("head.reception.title"), sub: t("head.reception.sub") },
+    onboard:   { title: t("head.onboard.title"),   sub: t("head.onboard.sub") },
+    coaches:   { title: t("head.coaches.title"),   sub: t("head.coaches.sub") },
+    staff:     { title: t("head.staff.title"),     sub: t("head.staff.sub") },
   };
 
   return (

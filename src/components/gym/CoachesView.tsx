@@ -224,7 +224,7 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
           </div>
 
           <div className="space-y-1.5">
-            <Label>Working days</Label>
+            <Label>{t("form.workingDays")}</Label>
             <div className="grid grid-cols-7 gap-1.5">
               {WEEKDAYS.map((w) => {
                 const allowed = isDayAllowed(audience, w.idx);

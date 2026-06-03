@@ -84,15 +84,15 @@ export function MembersDirectory() {
       <Card className="glass rounded-2xl border-warning/40 bg-warning/5">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="size-4 text-warning" /> Expiring in &lt; 7 days
+            <AlertTriangle className="size-4 text-warning" /> <bdi>{t("admin.expiringSoon")}</bdi>
           </CardTitle>
           <Badge className="bg-warning/20 text-warning border border-warning/40">
-            {expiringSoon.length} member{expiringSoon.length === 1 ? "" : "s"}
+            <bdi>{expiringSoon.length}</bdi>
           </Badge>
         </CardHeader>
         <CardContent>
           {expiringSoon.length === 0 ? (
-            <div className="text-sm text-muted-foreground py-4 text-center">No renewals due this week. 🎉</div>
+            <div className="text-sm text-muted-foreground py-4 text-center"><bdi>{t("admin.noRenewals")}</bdi> 🎉</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
               {expiringSoon.map((m) => {
@@ -104,10 +104,10 @@ export function MembersDirectory() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{m.name}</div>
-                      <div className="text-xs text-muted-foreground">{d} day{d === 1 ? "" : "s"} · {PLAN_LABEL[m.plan]}</div>
+                      <div className="text-xs text-muted-foreground"><bdi>{d}d</bdi> · <bdi dir="ltr">{PLAN_LABEL[m.plan]}</bdi></div>
                     </div>
                     <Button size="sm" variant="secondary" className="h-8" onClick={() => setRenewFor(m)}>
-                      <RefreshCw className="size-3.5" /> Renew
+                      <RefreshCw className="size-3.5" /> {t("action.renew")}
                     </Button>
                     <WhatsAppButton member={m} tone="renew" />
                   </div>

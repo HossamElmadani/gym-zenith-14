@@ -22,6 +22,7 @@ import { tzAddMonthsISO, tzFormatDate, tzTodayISO } from "@/lib/gym-tz";
 import { gymStore } from "@/lib/gym-store";
 import { MemberQR } from "./MemberQR";
 import { ReceiptDialog, type ReceiptPayload } from "./ReceiptDialog";
+import { useI18n } from "@/lib/i18n";
 
 type CinStatus = "idle" | "checking" | "ok" | "duplicate";
 

@@ -24,14 +24,14 @@ export function CashFlowWidget() {
           <div className="rounded-xl border border-success/30 bg-success/10 p-4">
             <div className="flex items-center justify-between text-success">
               <ArrowDownRight className="size-4" />
-              <span className="text-[10px] uppercase tracking-wider">Cash collected today</span>
+              <span className="text-[10px] uppercase tracking-wider">{t("metric.cashToday")}</span>
             </div>
             <div className="mt-2 text-3xl font-semibold text-success">{money(collected)}</div>
           </div>
           <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
             <div className="flex items-center justify-between text-destructive">
               <ArrowUpRight className="size-4" />
-              <span className="text-[10px] uppercase tracking-wider">Expiring this week</span>
+              <span className="text-[10px] uppercase tracking-wider">{t("metric.expiringWeek")}</span>
             </div>
             <div className="mt-2 text-3xl font-semibold text-destructive">{money(atRisk)}</div>
           </div>

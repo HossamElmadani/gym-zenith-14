@@ -191,6 +191,7 @@ export const gymStore = {
     MEMBERS.unshift(full);
     persistMembers();
     emit();
+    syncMember(full);
     return full;
   },
 

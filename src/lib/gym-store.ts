@@ -3,6 +3,40 @@ import {
   MEMBERS, persistMembers, PLAN_PRICES, PLAN_MONTHS, type Member, type PlanCode,
 } from "./gym-data";
 import { tzAddMonthsISO, tzDaysUntil, tzTodayISO } from "./gym-tz";
+import { appendCashLog, appendMemberLog } from "./sheets-sync.functions";
+
+// ---------------------------------------------------------------------------
+// LIVE GOOGLE SHEETS SYNC (fire-and-forget; never blocks UI)
+// ---------------------------------------------------------------------------
+let lastSyncError: string | null = null;
+const syncListeners = new Set<() => void>();
+const setSyncError = (e: string | null) => {
+  if (lastSyncError === e) return;
+  lastSyncError = e;
+  syncListeners.forEach((l) => l());
+};
+export function subscribeSyncStatus(l: () => void) {
+  syncListeners.add(l);
+  return () => syncListeners.delete(l);
+}
+export function getSyncError() { return lastSyncError; }
+
+function syncMember(m: Member) {
+  appendMemberLog({ data: {
+    timestamp: new Date().toISOString(),
+    name: m.name, cin: m.cin, phone: m.phone,
+    gender: m.gender, plan: m.plan, endDate: m.subEnd,
+  } }).then(() => setSyncError(null))
+    .catch((err) => { setSyncError(String(err?.message ?? err)); console.warn("[sheets sync] member", err); });
+}
+function syncCash(entry: { memberName?: string; amount: number; kind: string }) {
+  appendCashLog({ data: {
+    timestamp: new Date().toISOString(),
+    memberName: entry.memberName ?? "—",
+    amount: entry.amount, kind: entry.kind,
+  } }).then(() => setSyncError(null))
+    .catch((err) => { setSyncError(String(err?.message ?? err)); console.warn("[sheets sync] cash", err); });
+}
 
 // ---------------------------------------------------------------------------
 // PERSISTENCE LAYER (Supabase-ready abstraction)

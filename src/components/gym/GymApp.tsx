@@ -87,6 +87,7 @@ function Workspace() {
               {label} · {shiftLabel}
             </Badge>
             <span className="text-sm text-muted-foreground hidden sm:inline">{accentLabel}</span>
+            {role === "owner" && <LiveSyncIndicator />}
           </div>
 
           <div className="hidden md:flex relative flex-1 max-w-sm ms-2">

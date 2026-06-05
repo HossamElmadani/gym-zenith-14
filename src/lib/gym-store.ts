@@ -230,6 +230,8 @@ export const gymStore = {
       ...state.cash,
     ];
     emit();
+    syncMember(m);
+    syncCash({ memberName: m.name, amount: amountPaid, kind: "renewal" });
     return m;
   },
 

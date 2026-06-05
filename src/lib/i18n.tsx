@@ -113,6 +113,8 @@ export const DICT = {
   "search.byNameCinId":   { ar: "ابحث بالاسم أو CIN أو رقم العضو…", en: "Search by name, CIN, or ID…" },
   "common.notify":        { ar: "الإشعارات",                    en: "Notifications" },
   "common.of":            { ar: "من",                           en: "of" },
+  "sync.active":          { ar: "مزامنة السحابة: نشطة",         en: "Live Sync: Active" },
+  "sync.error":           { ar: "مزامنة السحابة: خطأ",          en: "Live Sync: Error" },
 } as const satisfies Dict;
 
 export type DictKey = keyof typeof DICT;

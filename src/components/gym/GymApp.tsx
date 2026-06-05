@@ -22,6 +22,7 @@ import { useAuth } from "@/lib/auth";
 import { dayName } from "@/lib/gym-data";
 import { useCurrentShift } from "@/lib/gym-shift";
 import { useI18n, type DictKey } from "@/lib/i18n";
+import { LiveSyncIndicator } from "./LiveSyncIndicator";
 
 type View = "admin" | "members" | "onboard" | "reception" | "coaches" | "staff";
 

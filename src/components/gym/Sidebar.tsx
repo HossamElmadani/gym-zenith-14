@@ -55,10 +55,10 @@ export function GymSidebar({ view, onChange, accentLabel, role }: Props) {
         })}
       </nav>
 
-      <div className="mt-auto rounded-xl border border-border/40 p-3 bg-background/30 text-xs text-muted-foreground">
+      {/* <div className="mt-auto rounded-xl border border-border/40 p-3 bg-background/30 text-xs text-muted-foreground">
         Cash-only gym CRM · MAD<br />
         Africa/Casablanca timezone
-      </div>
+      </div> */}
     </aside>
   );
 }

@@ -5,7 +5,7 @@ import {
 export type Gender = "male" | "female";
 
 /** Plan = duration only. No tiers. Cash gym. */
-export type PlanCode = "1M" | "3M" | "6M" | "12M";
+export type PlanCode = "1M" | "2M" | "3M" | "6M" | "12M";
 
 export type SubHistory = { date: string; plan: PlanCode; months: number; amount: number };
 
@@ -30,26 +30,48 @@ export type Member = {
 };
 
 export const PLAN_PRICES: Record<PlanCode, number> = {
-  "1M": 250,
-  "3M": 600,
-  "6M": 1000,
-  "12M": 1800,
+  "1M": 150,
+  "2M": 300,
+  "3M": 400,
+  "6M": 800,
+  "12M": 1500,
 };
 
 export const PLAN_MONTHS: Record<PlanCode, number> = {
-  "1M": 1, "3M": 3, "6M": 6, "12M": 12,
+  "1M": 1, "2M": 2, "3M": 3, "6M": 6, "12M": 12,
 };
 
-export const PLAN_LABEL: Record<PlanCode, string> = {
+export const PLAN_LABEL_AR: Record<PlanCode, string> = {
+  "1M": "شهر واحد",
+  "2M": "شهران",
+  "3M": "3 أشهر",
+  "6M": "6 أشهر",
+  "12M": "سنة كاملة",
+};
+
+export const PLAN_LABEL_EN: Record<PlanCode, string> = {
   "1M": "1 Month",
+  "2M": "2 Months",
   "3M": "3 Months",
   "6M": "6 Months",
   "12M": "1 Year",
 };
 
-export const PLAN_OPTIONS: { code: PlanCode; label: string; months: number; price: number }[] = (
-  ["1M", "3M", "6M", "12M"] as const
-).map((c) => ({ code: c, label: PLAN_LABEL[c], months: PLAN_MONTHS[c], price: PLAN_PRICES[c] }));
+// We make this dynamic by fetching the current language from localStorage
+export const getPlanOptions = () => {
+  const lang = typeof window !== "undefined" ? localStorage.getItem("pulse.lang") || "ar" : "ar";
+  const labels = lang === "ar" ? PLAN_LABEL_AR : PLAN_LABEL_EN;
+  
+  return (["1M", "2M", "3M", "6M", "12M"] as const).map((c) => ({
+    code: c,
+    label: labels[c],
+    months: PLAN_MONTHS[c],
+    price: PLAN_PRICES[c],
+  }));
+};
+
+// For backward compatibility where PLAN_OPTIONS is used directly
+export const PLAN_OPTIONS = getPlanOptions();
 
 // ---- Re-exports for backwards compatibility ----
 export const daysRemaining = (endIso: string, now = new Date()) =>

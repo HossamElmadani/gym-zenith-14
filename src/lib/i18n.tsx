@@ -67,7 +67,7 @@ export const DICT = {
   "form.fullName":        { ar: "الاسم الكامل",     en: "Full name" },
   "form.phone":           { ar: "رقم الهاتف",       en: "Phone number" },
   "form.gender":          { ar: "الجنس",            en: "Gender" },
-  "form.cin":             { ar: "البطاقة الوطنية",   en: "CIN / National ID" },
+  "form.cin":             { ar: "رقم البطاقة الوطنية (CIN)", en: "CIN / National ID" },
   "form.assignCoach":     { ar: "تعيين مدرب",       en: "Assign coach" },
   "form.startDate":       { ar: "تاريخ البدء",      en: "Start date" },
   "form.endDate":         { ar: "تاريخ الانتهاء",   en: "End date" },
@@ -83,6 +83,22 @@ export const DICT = {
   "form.startTime":       { ar: "وقت البدء",        en: "Start time" },
   "form.endTime":         { ar: "وقت الانتهاء",     en: "End time" },
 
+  // Onboard specific (New additions)
+  "onboard.identity":       { ar: "هوية العضو",                  en: "Member identity" },
+  "onboard.identitySub":    { ar: "البيانات الأساسية وأوقات الدخول.", en: "Core personal details and access schedule." },
+  "onboard.namePlaceholder":{ ar: "مثال: أحمد العلمي",             en: "e.g. Sofia Martin" },
+  "onboard.planCash":       { ar: "الاشتراك والصندوق",           en: "Plan & cash" },
+  "onboard.planCashSub":    { ar: "تاريخ الانتهاء يُحسب أوتوماتيكياً.", en: "End date auto-calculates from start + plan." },
+  "onboard.genderHelper":   { ar: "اختيار الجنس يحدد أوقات الدخول التلقائية.", en: "Selecting a gender assigns the weekly access schedule." },
+  "onboard.coachHelper":    { ar: "قائمة المدربين تُفلتر بناءً على الجنس المختار.", en: "Coach list filters automatically once a gender is selected." },
+  "onboard.picture":        { ar: "الصورة الشخصية (اختياري)",    en: "Profile picture (optional)" },
+  "onboard.upload":         { ar: "اسحب الصورة أو اضغط للرفع",    en: "Drop image or click to upload" },
+  "onboard.uploadSub":      { ar: "PNG · JPG · حتى 5 ميجابايت",  en: "PNG · JPG · up to 5MB" },
+  "onboard.cashRequired":   { ar: "إجباري. الأداء نقداً فقط.",    en: "Required. Cash-only gym — no card, no transfer." },
+  "onboard.ready":          { ar: "جاهز للتسجيل؟",                en: "Ready to register?" },
+  "onboard.readySub":       { ar: "تأكد من استلام المبلغ، ثم اضغط تسجيل.", en: "Fill all fields, confirm cash, then press Register." },
+  "onboard.registering":    { ar: "جاري التسجيل…",               en: "Registering…" },
+
   // Metrics
   "metric.activeToday":   { ar: "حاضرون اليوم",                en: "Active today" },
   "metric.cashToday":     { ar: "مداخيل اليوم — درهم",          en: "Cash collected today" },
@@ -91,12 +107,13 @@ export const DICT = {
 
   // Reception
   "reception.scannerTitle":   { ar: "امسح QR أو أدخل CIN / رقم العضو", en: "Scan QR or enter CIN / ID" },
-  "reception.scannerLabel":   { ar: "ماسح الاستقبال",                 en: "Reception scanner" },
+  "reception.scannerLabel":   { ar: "ماسح الاستقبال",                en: "Reception scanner" },
 
   // Admin
   "admin.expiringSoon":       { ar: "قارب اشتراكهم على الانتهاء",      en: "Expiring Soon" },
+  "admin.cashNote":           { ar: "كل الأداءات نقداً · توقيت إفريقيا/الدار البيضاء", en: "All payments are cash · Africa/Casablanca" },
   "admin.noRenewals":         { ar: "لا توجد تجديدات هذا الأسبوع",     en: "No renewals due this week" },
-  "admin.dueIn7":             { ar: "أعضاء يستوجبون التجديد خلال أقل من ٧ أيام", en: "Members due to renew in < 7 days" },
+  "admin.dueIn7":             { ar: "أعضاء يستوجبون التجديد خلال أقل من 7 أيام", en: "Members due to renew in < 7 days" },
 
   // Shift
   "shift.men":            { ar: "الدوام الحالي: رجال",          en: "Active Shift: Men" },
@@ -109,10 +126,12 @@ export const DICT = {
   "role.receptionist":    { ar: "موظف الاستقبال",               en: "receptionist" },
 
   // Misc
-  "search.members":       { ar: "ابحث عن عضو…",                 en: "Search members…" },
+  "search.members":       { ar: "ابحث عن عضو…",                en: "Search members…" },
   "search.byNameCinId":   { ar: "ابحث بالاسم أو CIN أو رقم العضو…", en: "Search by name, CIN, or ID…" },
   "common.notify":        { ar: "الإشعارات",                    en: "Notifications" },
-  "common.of":            { ar: "من",                           en: "of" },
+  "common.days":          { ar: "أيام",                       en: "days" },
+  "common.currency":      { ar: "درهم",                       en: "MAD" },
+  "common.of":            { ar: "من",                         en: "of" },
   "sync.active":          { ar: "مزامنة السحابة: نشطة",         en: "Live Sync: Active" },
   "sync.error":           { ar: "مزامنة السحابة: خطأ",          en: "Live Sync: Error" },
 } as const satisfies Dict;

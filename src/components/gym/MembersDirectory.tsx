@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  MEMBERS, daysRemaining, subStatus, subUsedPct, PLAN_LABEL, type Member,
+  MEMBERS, daysRemaining, subStatus, subUsedPct, PLAN_OPTIONS, type Member,
 } from "@/lib/gym-data";
 import { tzFormatDate } from "@/lib/gym-tz";
 import { WhatsAppButton } from "./WhatsAppButton";
@@ -36,12 +36,12 @@ function statusMeta(s: ReturnType<typeof subStatus> | "frozen", t: (k: import("@
   if (s === "active")    return { label: t("status.active"),   cls: "bg-success/15 text-success border-success/30" };
   if (s === "expiring")  return { label: t("status.expiring"), cls: "bg-warning/15 text-warning border-warning/30" };
   if (s === "frozen")    return { label: t("status.frozen"),   cls: "bg-sky-500/15 text-sky-300 border-sky-500/40" };
-  return                        { label: t("status.expired"),  cls: "bg-destructive/15 text-destructive border-destructive/30" };
+  return                 { label: t("status.expired"),  cls: "bg-destructive/15 text-destructive border-destructive/30" };
 }
 
 
 export function MembersDirectory() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "expiring" | "expired" | "frozen">("all");
   const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
   const [query, setQuery] = useState("");
@@ -97,6 +97,7 @@ export function MembersDirectory() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
               {expiringSoon.map((m) => {
                 const d = daysRemaining(m.subEnd);
+                const planLabel = PLAN_OPTIONS.find((p) => p.code === m.plan)?.label;
                 return (
                   <div key={m.id} className="flex items-center gap-3 rounded-xl border border-warning/30 bg-card/40 px-3 py-2.5">
                     <Avatar className="size-9">
@@ -104,7 +105,7 @@ export function MembersDirectory() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{m.name}</div>
-                      <div className="text-xs text-muted-foreground"><bdi>{d}d</bdi> · <bdi dir="ltr">{PLAN_LABEL[m.plan]}</bdi></div>
+                      <div className="text-xs text-muted-foreground"><bdi>{d} {t("common.days")}</bdi> · <bdi dir="ltr">{planLabel}</bdi></div>
                     </div>
                     <Button size="sm" variant="secondary" className="h-8" onClick={() => setRenewFor(m)}>
                       <RefreshCw className="size-3.5" /> {t("action.renew")}
@@ -164,13 +165,14 @@ export function MembersDirectory() {
             </TableHeader>
             <TableBody>
               {rows.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center py-10 text-sm text-muted-foreground">No members match these filters.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-10 text-sm text-muted-foreground">{lang === "ar" ? "لا يوجد أعضاء يطابقون هذا البحث." : "No members match these filters."}</TableCell></TableRow>
               )}
               {rows.map((m) => {
                 const eff = effectiveStatus(m);
                 const d = daysRemaining(m.subEnd);
                 const s = statusMeta(eff, t);
                 const isAtRisk = eff === "expiring" || eff === "expired";
+                const planLabel = PLAN_OPTIONS.find((p) => p.code === m.plan)?.label;
                 return (
                   <TableRow key={m.id} onClick={() => setSelected(m)} className="cursor-pointer border-border/40 hover:bg-accent/40">
                     <TableCell>
@@ -182,7 +184,7 @@ export function MembersDirectory() {
                         </Avatar>
                         <div className="min-w-0">
                           <div className="text-sm font-medium truncate">{m.name}</div>
-                          <div className="text-xs text-muted-foreground"><bdi dir="ltr">{m.id}</bdi> · <bdi dir="ltr">{PLAN_LABEL[m.plan]}</bdi></div>
+                          <div className="text-xs text-muted-foreground"><bdi dir="ltr">{m.id}</bdi> · <bdi dir="ltr">{planLabel}</bdi></div>
                         </div>
                       </div>
                     </TableCell>
@@ -195,7 +197,7 @@ export function MembersDirectory() {
                     <TableCell className="text-sm font-medium">
                       {eff === "frozen" ? <span className="text-sky-300">{t("status.paused")}</span>
                         : d === 0 ? <span className="text-destructive">—</span>
-                        : <bdi>{d}d</bdi>}
+                        : <bdi>{d} {t("common.days")}</bdi>}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`border ${s.cls}`}>{s.label}</Badge>
@@ -209,7 +211,7 @@ export function MembersDirectory() {
                         {eff === "frozen" ? (
                           <Button size="sm" variant="outline"
                             className="border-sky-500/40 text-sky-300 hover:bg-sky-500/10"
-                            onClick={() => { gymStore.unfreeze(m.id); toast.success(`${m.name} unfrozen`); }}>
+                            onClick={() => { gymStore.unfreeze(m.id); toast.success(lang === "ar" ? `تم إلغاء تجميد ${m.name}` : `${m.name} unfrozen`); }}>
                             <Snowflake className="size-3.5" /> {t("action.unfreeze")}
                           </Button>
                         ) : (
@@ -247,6 +249,8 @@ function MemberSheet({ member, onClose, onFreeze, onRenew, frozen }: {
   onRenew: (m: Member) => void;
   frozen: { from: string; to: string } | null;
 }) {
+  const { t, lang } = useI18n();
+
   return (
     <Sheet open={!!member} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="bg-card/95 backdrop-blur-xl border-l border-border/60 w-full sm:max-w-md overflow-y-auto">
@@ -261,7 +265,7 @@ function MemberSheet({ member, onClose, onFreeze, onRenew, frozen }: {
                 </Avatar>
                 <div className="text-left">
                   <SheetTitle className="text-lg">{member.name}</SheetTitle>
-                  <SheetDescription className="text-xs">{member.id} · {member.cin} · {PLAN_LABEL[member.plan]}</SheetDescription>
+                  <SheetDescription className="text-xs">{member.id} · {member.cin} · {PLAN_OPTIONS.find((p) => p.code === member.plan)?.label}</SheetDescription>
                 </div>
               </div>
             </SheetHeader>
@@ -269,7 +273,7 @@ function MemberSheet({ member, onClose, onFreeze, onRenew, frozen }: {
             {frozen && (
               <div className="mt-4 rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm flex items-center gap-2">
                 <Snowflake className="size-4 text-sky-300" />
-                <span><span className="text-sky-300 font-medium">Frozen</span> · {frozen.from} → {frozen.to}</span>
+                <span><span className="text-sky-300 font-medium">{lang === "ar" ? "مُجمّد" : "Frozen"}</span> · {frozen.from} → {frozen.to}</span>
               </div>
             )}
 
@@ -282,25 +286,25 @@ function MemberSheet({ member, onClose, onFreeze, onRenew, frozen }: {
               {/* Subscription progress */}
               <section className="rounded-xl border border-border/60 bg-background/40 p-4">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span className="uppercase tracking-wide">Subscription used</span>
-                  <span>{subUsedPct(member.subStart, member.subEnd)}%</span>
+                  <span className="uppercase tracking-wide">{lang === "ar" ? "نسبة استهلاك الاشتراك" : "Subscription used"}</span>
+                  <span><bdi>{subUsedPct(member.subStart, member.subEnd)}%</bdi></span>
                 </div>
                 <Progress value={subUsedPct(member.subStart, member.subEnd)} className="mt-3 h-3" />
                 <div className="mt-3 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Start · {tzFormatDate(member.subStart)}</span>
-                  <span className="text-muted-foreground">End · {tzFormatDate(member.subEnd)}</span>
+                  <span className="text-muted-foreground">{lang === "ar" ? "البداية" : "Start"} · {tzFormatDate(member.subStart)}</span>
+                  <span className="text-muted-foreground">{lang === "ar" ? "النهاية" : "End"} · {tzFormatDate(member.subEnd)}</span>
                 </div>
                 <div className="mt-3 flex items-center gap-2 text-sm">
                   <Clock className="size-4 text-primary" />
-                  <span className="font-medium">{daysRemaining(member.subEnd)} days remaining</span>
-                  <span className="text-muted-foreground">· {member.subMonths}-month plan</span>
+                  <span className="font-medium"><bdi>{daysRemaining(member.subEnd)} {lang === "ar" ? "أيام متبقية" : "days remaining"}</bdi></span>
+                  <span className="text-muted-foreground">· {PLAN_OPTIONS.find((p) => p.code === member.plan)?.label}</span>
                 </div>
               </section>
 
               {/* Subscription history */}
               <section>
                 <div className="flex items-center gap-2 mb-3 text-sm font-medium">
-                  <HistoryIcon className="size-4 text-muted-foreground" /> Payment history
+                  <HistoryIcon className="size-4 text-muted-foreground" /> {lang === "ar" ? "سجل الأداءات" : "Payment history"}
                 </div>
                 <ul className="space-y-2">
                   {member.history.map((h, i) => (
@@ -309,7 +313,7 @@ function MemberSheet({ member, onClose, onFreeze, onRenew, frozen }: {
                         <Calendar className="size-3.5 text-muted-foreground" />
                         <span>{tzFormatDate(h.date)}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground">{PLAN_LABEL[h.plan]} · {h.amount} MAD</span>
+                      <span className="text-xs text-muted-foreground">{PLAN_OPTIONS.find((p) => p.code === h.plan)?.label} · <bdi>{h.amount} {t("common.currency")}</bdi></span>
                     </li>
                   ))}
                 </ul>
@@ -318,17 +322,17 @@ function MemberSheet({ member, onClose, onFreeze, onRenew, frozen }: {
               {/* Check-ins */}
               <section>
                 <div className="flex items-center gap-2 mb-3 text-sm font-medium">
-                  <CheckCircle2 className="size-4 text-muted-foreground" /> Recent check-ins
+                  <CheckCircle2 className="size-4 text-muted-foreground" /> {lang === "ar" ? "تسجيلات الدخول الأخيرة" : "Recent check-ins"}
                 </div>
-                <ol className="relative border-l border-border/60 pl-4 space-y-3">
+                <ol className="relative border-s border-border/60 ps-4 space-y-3">
                   {member.recentCheckIns.length === 0 && (
-                    <li className="text-xs text-muted-foreground">No recent check-ins.</li>
+                    <li className="text-xs text-muted-foreground">{lang === "ar" ? "لا توجد تسجيلات دخول حديثة." : "No recent check-ins."}</li>
                   )}
                   {member.recentCheckIns.map((c, i) => (
                     <li key={i} className="relative">
-                      <span className="absolute -left-[21px] top-1.5 size-2.5 rounded-full bg-primary ring-4 ring-primary/15" />
+                      <span className="absolute -start-[21px] top-1.5 size-2.5 rounded-full bg-primary ring-4 ring-primary/15" />
                       <div className="text-sm">{tzFormatDate(c, { day: "2-digit", month: "short" })}</div>
-                      <div className="text-xs text-muted-foreground">{i === 0 ? "Most recent visit" : `Visit #${member.recentCheckIns.length - i}`}</div>
+                      <div className="text-xs text-muted-foreground">{i === 0 ? (lang === "ar" ? "أحدث زيارة" : "Most recent visit") : (lang === "ar" ? `الزيارة #${member.recentCheckIns.length - i}` : `Visit #${member.recentCheckIns.length - i}`)}</div>
                     </li>
                   ))}
                 </ol>
@@ -336,13 +340,13 @@ function MemberSheet({ member, onClose, onFreeze, onRenew, frozen }: {
 
               <section className="grid grid-cols-2 gap-2 sticky bottom-0 bg-card/95 backdrop-blur pt-2">
                 <Button onClick={() => onRenew(member)} className="gap-1.5 bg-success text-black hover:bg-success/90">
-                  <RefreshCw className="size-4" /> Renew (cash)
+                  <RefreshCw className="size-4" /> {lang === "ar" ? "تجديد (نقداً)" : "Renew (cash)"}
                 </Button>
                 <Button variant="outline" onClick={() => onFreeze(member)} className="gap-1.5 border-sky-500/40 text-sky-300 hover:bg-sky-500/10">
-                  <Snowflake className="size-4" /> Freeze
+                  <Snowflake className="size-4" /> {t("action.freeze")}
                 </Button>
                 <div className="col-span-2">
-                  <WhatsAppButton member={member} tone="renew" size="sm" label="WhatsApp member" className="w-full" />
+                  <WhatsAppButton member={member} tone="renew" size="sm" label={lang === "ar" ? "مراسلة العضو" : "WhatsApp member"} className="w-full" />
                 </div>
               </section>
             </div>

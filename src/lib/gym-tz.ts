@@ -81,9 +81,13 @@ export function tzUsedPct(startIso: string, endIso: string, now = new Date()): n
 
 /** Human readable date in Casablanca. */
 export function tzFormatDate(iso: string, opts: Intl.DateTimeFormatOptions = {
-  day: "2-digit", month: "short", year: "numeric",
+  day: "numeric", month: "long", year: "numeric",
 }): string {
-  return new Intl.DateTimeFormat(undefined, { ...opts, timeZone: APP_TZ })
+  // جلب اللغة الحالية للموقع من المتصفح
+  const lang = typeof window !== "undefined" ? localStorage.getItem("pulse.lang") || "ar" : "ar";
+  const locale = lang === "ar" ? "ar-MA" : "en-US";
+
+  return new Intl.DateTimeFormat(locale, { ...opts, timeZone: APP_TZ })
     .format(new Date(`${iso}T12:00:00Z`));
 }
 

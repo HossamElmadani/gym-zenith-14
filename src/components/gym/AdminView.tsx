@@ -51,7 +51,7 @@ export function AdminView({ todayMode, dayLabel }: Props) {
           </div>
           <div className="mt-3 text-4xl font-semibold tracking-tight">{activeToday.length}</div>
           <div className="text-xs text-muted-foreground mt-1">
-            {todayMode === "closed" ? "Transition / Closed — no gender shift active" : `${todayMode === "men" ? "Men's" : "Women's"} shift · ${dayLabel}`}
+            {todayMode === "closed" ? t("shift.closed") : `${todayMode === "men" ? t("shift.men") : t("shift.women")} · ${dayLabel}`}
           </div>
         </CardContent>
       </Card>
@@ -63,9 +63,9 @@ export function AdminView({ todayMode, dayLabel }: Props) {
             <Wallet className="size-4 text-success" />
           </div>
           <div className="mt-3 text-4xl font-semibold tracking-tight text-success">
-            {new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(collected)} <span className="text-base text-muted-foreground font-normal">MAD</span>
+            {new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(collected)} <span className="text-base text-muted-foreground font-normal">{t("common.currency")}</span>
           </div>
-          <div className="text-xs text-muted-foreground mt-1">All payments are cash · Africa/Casablanca</div>
+          <div className="text-xs text-muted-foreground mt-1">{t("admin.cashNote")}</div>
         </CardContent>
       </Card>
 
@@ -76,7 +76,7 @@ export function AdminView({ todayMode, dayLabel }: Props) {
             <AlertTriangle className="size-4 text-warning" />
           </div>
           <div className="mt-3 text-4xl font-semibold tracking-tight text-warning">{expiringSoon.length}</div>
-          <div className="text-xs text-muted-foreground mt-1">Members due to renew in &lt; 7 days</div>
+          <div className="text-xs text-muted-foreground mt-1">{t("admin.dueIn7")}</div>
         </CardContent>
       </Card>
 
@@ -116,7 +116,7 @@ export function AdminView({ todayMode, dayLabel }: Props) {
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{m.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        <bdi>{d}d</bdi> · <bdi dir="ltr">{m.phone}</bdi>
+                        <bdi>{d} {t("common.days")}</bdi> · <bdi dir="ltr">{m.phone}</bdi>
                       </div>
                     </div>
                     <WhatsAppButton member={m} tone="renew" />

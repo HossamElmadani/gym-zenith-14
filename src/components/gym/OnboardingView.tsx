@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { arMA, enUS } from "date-fns/locale"; // arMA هي العربية الخاصة بالمغرب
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,7 @@ import {
   Printer, ShieldCheck, Upload, User2, Wallet, X,
 } from "lucide-react";
 import {
-  MEMBERS, PLAN_OPTIONS, PLAN_PRICES, type PlanCode,
+  MEMBERS, getPlanOptions, PLAN_PRICES, type PlanCode
 } from "@/lib/gym-data";
 import { useCoaches } from "@/lib/coaches-data";
 import { tzAddMonthsISO, tzFormatDate, tzTodayISO } from "@/lib/gym-tz";
@@ -27,7 +28,8 @@ import { useI18n } from "@/lib/i18n";
 type CinStatus = "idle" | "checking" | "ok" | "duplicate";
 
 export function OnboardingView() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const PLAN_OPTIONS = useMemo(() => getPlanOptions(), [lang]);
   const [name, setName] = useState("");
   const [cin, setCin] = useState("");
   const [cinStatus, setCinStatus] = useState<CinStatus>("idle");
@@ -61,10 +63,10 @@ export function OnboardingView() {
 
   const scheduleHelper =
     gender === "male"
-      ? "Access schedule: Mon · Wed · Fri (Men's days)"
+      ? (lang === "ar" ? "أوقات الدخول: الإثنين · الأربعاء · الجمعة (أيام الرجال)" : "Access schedule: Mon · Wed · Fri (Men's days)")
       : gender === "female"
-      ? "Access schedule: Tue · Thu · Sat (Women's days)"
-      : "Selecting a gender assigns the weekly access schedule.";
+      ? (lang === "ar" ? "أوقات الدخول: الثلاثاء · الخميس · السبت (أيام النساء)" : "Access schedule: Tue · Thu · Sat (Women's days)")
+      : t("onboard.genderHelper");
 
   const handleCinBlur = () => {
     const value = cin.trim().toUpperCase();
@@ -84,7 +86,7 @@ export function OnboardingView() {
   const onFiles = (files: FileList | null) => {
     const f = files?.[0];
     if (!f) return;
-    if (!f.type.startsWith("image/")) return toast.error("Only image files");
+    if (!f.type.startsWith("image/")) return toast.error(lang === "ar" ? "ملفات الصور فقط" : "Only image files");
     const reader = new FileReader();
     reader.onload = () => setAvatar(reader.result as string);
     reader.readAsDataURL(f);
@@ -107,7 +109,6 @@ export function OnboardingView() {
     setTimeout(() => {
       const start = tzTodayISO(startDate);
       const months = PLAN_OPTIONS.find((p) => p.code === plan)!.months;
-      // Build permanent ID (prefix by gender)
       const prefix = gender === "male" ? "M" : "F";
       const next = String(
         Math.max(0, ...MEMBERS.filter((m) => m.id.startsWith(prefix + "-")).map((m) => parseInt(m.id.split("-")[1], 10) || 0)) + 1,
@@ -126,7 +127,7 @@ export function OnboardingView() {
         history: [{ date: start, plan, months, amount: cashNumber }],
         coachId: coachId === "none" ? null : coachId,
       });
-      // Cash log
+      
       gymStore.logCash({
         amount: cashNumber, kind: "registration", planCode: plan,
         memberId: added.id, memberName: added.name,
@@ -137,8 +138,8 @@ export function OnboardingView() {
         id: added.id, name: added.name, cin: added.cin, phone: added.phone,
         planCode: plan, amount: cashNumber, startDate: start, endDate, gender,
       });
-      toast.success("Member registered", {
-        description: `${added.name} · ${added.id} · paid ${cashNumber} MAD`,
+      toast.success(lang === "ar" ? "تم تسجيل العضو بنجاح" : "Member registered", {
+        description: `${added.name} · ${added.id} · ${lang === "ar" ? "دفع" : "paid"} ${cashNumber} ${t("common.currency")}`,
       });
     }, 600);
   };
@@ -164,7 +165,9 @@ export function OnboardingView() {
   };
 
   const waMessage = registered
-    ? `Hi ${registered.name}! Welcome to PULSE Gym. Your ${PLAN_OPTIONS.find((p) => p.code === registered.planCode)!.label} access is active until ${tzFormatDate(registered.endDate)}. Days: ${registered.gender === "male" ? "Mon/Wed/Fri" : "Tue/Thu/Sat"}.`
+    ? (lang === "ar" 
+        ? `مرحباً ${registered.name}! أهلاً بك في PULSE Gym. اشتراكك (${PLAN_OPTIONS.find((p) => p.code === registered.planCode)!.label}) فعّال حتى ${tzFormatDate(registered.endDate)}. أيام الدخول: ${registered.gender === "male" ? "الإثنين/الأربعاء/الجمعة" : "الثلاثاء/الخميس/السبت"}.`
+        : `Hi ${registered.name}! Welcome to PULSE Gym. Your ${PLAN_OPTIONS.find((p) => p.code === registered.planCode)!.label} access is active until ${tzFormatDate(registered.endDate)}. Days: ${registered.gender === "male" ? "Mon/Wed/Fri" : "Tue/Thu/Sat"}.`)
     : "";
   const waHref = registered
     ? `https://wa.me/${registered.phone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(waMessage)}`
@@ -177,22 +180,22 @@ export function OnboardingView() {
         <Card className="glass rounded-2xl xl:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <User2 className="size-4 text-primary" /> Member identity
+              <User2 className="size-4 text-primary" /> {t("onboard.identity")}
             </CardTitle>
-            <CardDescription>Core personal details and access schedule.</CardDescription>
+            <CardDescription>{t("onboard.identitySub")}</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="name">{t("form.fullName")}</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Sofia Martin" className="bg-background/50" />
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("onboard.namePlaceholder")} className="bg-background/50" />
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="cin" className="flex items-center justify-between">
-                <span>CIN / National ID</span>
-                {cinStatus === "checking" && <span className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="size-3 animate-spin" /> checking…</span>}
-                {cinStatus === "ok" && <span className="text-xs text-success flex items-center gap-1"><CheckCircle2 className="size-3" /> available</span>}
-                {cinStatus === "duplicate" && <span className="text-xs text-destructive flex items-center gap-1"><X className="size-3" /> already registered</span>}
+                <span>{t("form.cin")}</span>
+                {cinStatus === "checking" && <span className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="size-3 animate-spin" /> {lang === "ar" ? "جاري التحقق…" : "checking..."}</span>}
+                {cinStatus === "ok" && <span className="text-xs text-success flex items-center gap-1"><CheckCircle2 className="size-3" /> {lang === "ar" ? "متاح" : "available"}</span>}
+                {cinStatus === "duplicate" && <span className="text-xs text-destructive flex items-center gap-1"><X className="size-3" /> {lang === "ar" ? "مسجل مسبقاً" : "already registered"}</span>}
               </Label>
               <Input id="cin" value={cin}
                 onChange={(e) => { setCin(e.target.value); setCinStatus("idle"); }}
@@ -254,13 +257,15 @@ export function OnboardingView() {
               <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
                 <Info className="size-3 text-primary" />
                 {gender
-                  ? `Only ${gender === "male" ? "Men Only" : "Women Only"} coaches are shown — gender isolation enforced.`
-                  : "Coach list filters automatically once a gender is selected."}
+                  ? (lang === "ar" 
+                      ? `يتم عرض مدربي ${gender === "male" ? "الرجال" : "النساء"} فقط — تم تطبيق العزل التام.` 
+                      : `Only ${gender === "male" ? "Men Only" : "Women Only"} coaches are shown — gender isolation enforced.`)
+                  : t("onboard.coachHelper")}
               </p>
             </div>
 
             <div className="md:col-span-2 space-y-1.5">
-              <Label>Profile picture (optional)</Label>
+              <Label>{t("onboard.picture")}</Label>
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
@@ -275,8 +280,8 @@ export function OnboardingView() {
                   <AvatarFallback className="bg-muted text-muted-foreground"><User2 className="size-5" /></AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="text-sm font-medium flex items-center gap-2"><Upload className="size-4 text-primary" /> Drop image or click to upload</div>
-                  <div className="text-xs text-muted-foreground">PNG · JPG · up to 5MB</div>
+                  <div className="text-sm font-medium flex items-center gap-2"><Upload className="size-4 text-primary" /> {t("onboard.upload")}</div>
+                  <div className="text-xs text-muted-foreground"><bdi>{t("onboard.uploadSub")}</bdi></div>
                 </div>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFiles(e.target.files)} />
               </div>
@@ -288,9 +293,9 @@ export function OnboardingView() {
         <Card className="glass rounded-2xl xl:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <ShieldCheck className="size-4 text-primary" /> Plan & cash
+              <ShieldCheck className="size-4 text-primary" /> {t("onboard.planCash")}
             </CardTitle>
-            <CardDescription>End date auto-calculates from start + plan.</CardDescription>
+            <CardDescription>{t("onboard.planCashSub")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
@@ -302,7 +307,7 @@ export function OnboardingView() {
                     <SelectItem key={p.code} value={p.code}>
                       <span className="flex items-center justify-between gap-6 w-full">
                         <span>{p.label}</span>
-                        <span className="text-muted-foreground text-xs">{p.price} MAD</span>
+                        <span className="text-muted-foreground text-xs"><bdi>{p.price} {t("common.currency")}</bdi></span>
                       </span>
                     </SelectItem>
                   ))}
@@ -320,7 +325,7 @@ export function OnboardingView() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={startDate} onSelect={(d) => d && setStartDate(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  <Calendar mode="single" selected={startDate} onSelect={(d) => d && setStartDate(d)} initialFocus locale={lang === "ar" ? arMA : enUS} className={cn("p-3 pointer-events-auto")} />
                 </PopoverContent>
               </Popover>
             </div>
@@ -347,7 +352,7 @@ export function OnboardingView() {
                 className="bg-background/50 text-xl font-semibold text-success"
               />
               <p className="text-[11px] text-muted-foreground">
-                Required. Cash-only gym — no card, no transfer.
+                {t("onboard.cashRequired")}
               </p>
             </div>
           </CardContent>
@@ -359,13 +364,17 @@ export function OnboardingView() {
             {!registered ? (
               <>
                 <div className="flex-1 min-w-[200px]">
-                  <div className="text-sm font-medium">Ready to register?</div>
+                  <div className="text-sm font-medium">{t("onboard.ready")}</div>
                   <p className="text-xs text-muted-foreground">
-                    Fill all fields, confirm cash, then press Register.
+                    {t("onboard.readySub")}
                   </p>
                 </div>
                 <Button type="submit" disabled={!canSubmit || submitting} className="min-w-[200px]">
-                  {submitting ? <><Loader2 className="size-4 animate-spin" /> Registering…</> : <><Wallet className="size-4" /> Register & take {cashNumber || 0} MAD</>}
+                  {submitting ? (
+                    <><Loader2 className="size-4 animate-spin" /> {t("onboard.registering")}</>
+                  ) : (
+                    <><Wallet className="size-4" /> {t("action.register")} {lang === "ar" ? "واستلام" : "& take"} <bdi>{cashNumber || 0} {t("common.currency")}</bdi></>
+                  )}
                 </Button>
               </>
             ) : (
@@ -375,18 +384,20 @@ export function OnboardingView() {
                   <div>
                     <div className="text-sm font-medium">{registered.name} · {registered.id}</div>
                     <div className="text-xs text-muted-foreground">
-                      Paid {registered.amount} MAD · ends {tzFormatDate(registered.endDate)}
+                      {lang === "ar" ? "تم الدفع" : "Paid"} <bdi>{registered.amount} {t("common.currency")}</bdi> · {lang === "ar" ? "ينتهي" : "ends"} <bdi dir="ltr">{tzFormatDate(registered.endDate)}</bdi>
                     </div>
                   </div>
                 </div>
                 <MemberQR member={registered} size={72} withCaption={false} />
                 <Button type="button" onClick={openReceipt} className="bg-success text-black hover:bg-success/90">
-                  <Printer className="size-4" /> Print receipt
+                  <Printer className="size-4" /> {lang === "ar" ? "طباعة الإيصال" : "Print receipt"}
                 </Button>
                 <Button asChild type="button" variant="secondary">
-                  <a href={waHref} target="_blank" rel="noreferrer"><MessageCircle className="size-4" /> WhatsApp welcome</a>
+                  <a href={waHref} target="_blank" rel="noreferrer"><MessageCircle className="size-4" /> {lang === "ar" ? "رسالة واتساب" : "WhatsApp welcome"}</a>
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>Register another</Button>
+                <Button type="button" variant="outline" onClick={resetForm}>
+                  {lang === "ar" ? "تسجيل عضو آخر" : "Register another"}
+                </Button>
               </>
             )}
           </CardContent>

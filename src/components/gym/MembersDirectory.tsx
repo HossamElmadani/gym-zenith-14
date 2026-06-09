@@ -184,7 +184,7 @@ export function MembersDirectory() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                          <div className="text-sm font-medium truncate">{m.name}</div>
+                          <div className="text-sm font-medium truncate flex items-center gap-1.5"><span className="truncate">{m.name}</span><InsuranceShield insuranceEnd={m.insuranceEnd} /></div>
                           <div className="text-xs text-muted-foreground"><bdi dir="ltr">{m.id}</bdi> · <bdi dir="ltr">{planLabel}</bdi></div>
                         </div>
                       </div>

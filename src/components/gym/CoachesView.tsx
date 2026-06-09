@@ -409,9 +409,106 @@ function CoachDetailSheet({ coach, onClose, activeCoaches }: { coach: Coach | nu
       </SheetContent>
 
       <AssignMemberDialog open={assignOpen} onClose={() => setAssignOpen(false)} coach={coach} />
+      <ArchiveCoachDialog
+        open={archiveOpen}
+        onClose={() => setArchiveOpen(false)}
+        coach={coach}
+        assignedMembers={members}
+        replacementOptions={replacementOptions}
+        onArchived={() => { setArchiveOpen(false); onClose(); }}
+      />
     </Sheet>
   );
 }
+
+function ArchiveCoachDialog({
+  open, onClose, coach, assignedMembers, replacementOptions, onArchived,
+}: {
+  open: boolean;
+  onClose: () => void;
+  coach: Coach;
+  assignedMembers: Member[];
+  replacementOptions: Coach[];
+  onArchived: () => void;
+}) {
+  const { t, lang } = useI18n();
+  const [replacement, setReplacement] = useState<string>("");
+  const hasMembers = assignedMembers.length > 0;
+
+  const submit = () => {
+    if (hasMembers && !replacement) {
+      toast.error(lang === "ar" ? "اختر مدرباً بديلاً" : "Pick a replacement coach");
+      return;
+    }
+    if (hasMembers) {
+      assignedMembers.forEach((m) => gymStore.assignCoach(m.id, replacement));
+    }
+    coachStore.archive(coach.id);
+    toast.success(lang === "ar" ? `تمت أرشفة ${coach.name}` : `${coach.name} archived`, {
+      description: hasMembers
+        ? (lang === "ar" ? `تم تحويل ${assignedMembers.length} عضو` : `Handed over ${assignedMembers.length} member${assignedMembers.length === 1 ? "" : "s"}`)
+        : undefined,
+    });
+    setReplacement("");
+    onArchived();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(b) => !b && (setReplacement(""), onClose())}>
+      <DialogContent className="glass border-border/60 sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ShieldAlert className="size-4 text-destructive" />
+            {lang === "ar" ? "أرشفة المدرب" : "Archive Coach"}
+          </DialogTitle>
+          <DialogDescription>
+            {hasMembers
+              ? (lang === "ar"
+                  ? `لدى هذا المدرب ${assignedMembers.length} عضو معيّن. اختر مدرباً بديلاً لتسليم هؤلاء الأعضاء.`
+                  : `This coach has ${assignedMembers.length} assigned member${assignedMembers.length === 1 ? "" : "s"}. Please select a replacement coach to handover these members.`)
+              : (lang === "ar" ? "لا يوجد أعضاء معيّنون. سيتم الأرشفة مباشرة." : "No assigned members. Archive will proceed directly.")}
+          </DialogDescription>
+        </DialogHeader>
+
+        {hasMembers && (
+          <div className="space-y-2">
+            <Label>{lang === "ar" ? "المدرب البديل" : "Replacement coach"}</Label>
+            {replacementOptions.length === 0 ? (
+              <div className="text-xs text-destructive rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
+                {lang === "ar"
+                  ? "لا يوجد مدرب نشط آخر بنفس الجمهور. أضف مدرباً أولاً."
+                  : "No other active coach with the same audience. Add one first."}
+              </div>
+            ) : (
+              <select
+                value={replacement}
+                onChange={(e) => setReplacement(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background/50 px-3 text-sm"
+              >
+                <option value="">{lang === "ar" ? "اختر مدرباً…" : "Select a coach…"}</option>
+                {replacementOptions.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name} · {c.specialty}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>{t("action.cancel")}</Button>
+          <Button
+            variant="destructive"
+            onClick={submit}
+            disabled={hasMembers && replacementOptions.length === 0}
+          >
+            <Archive className="size-3.5" /> {lang === "ar" ? "أرشفة وتسليم" : "Archive & Handover"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function buildReminder(member: Member, coach: Coach, lang: string) {
   const first = member.name.split(" ")[0];

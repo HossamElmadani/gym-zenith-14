@@ -594,7 +594,7 @@ function AssignedMembersTable({ members, coach, mode }: { members: Member[]; coa
                         </AvatarFallback>
                       </Avatar>
                       <div className="leading-tight">
-                        <div className="text-sm font-medium">{m.name}</div>
+                        <div className="text-sm font-medium flex items-center gap-1.5">{m.name}<InsuranceShield insuranceEnd={m.insuranceEnd} /></div>
                         <div className="text-[10px] text-muted-foreground">{m.id}</div>
                       </div>
                     </div>

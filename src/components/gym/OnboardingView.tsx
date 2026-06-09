@@ -11,9 +11,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 import {
   CalendarIcon, CheckCircle2, Dumbbell, Info, Loader2, MessageCircle,
-  Printer, ShieldCheck, Upload, User2, Wallet, X, Sparkles,
+  Printer, Shield, ShieldCheck, Upload, User2, Wallet, X, Sparkles,
 } from "lucide-react";
 import {
   MEMBERS, getPlanOptions, PLAN_PRICES, type PlanCode

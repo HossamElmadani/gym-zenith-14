@@ -82,8 +82,15 @@ export function OnboardingView() {
 
   const onPlanChange = (p: PlanCode) => {
     setPlan(p);
-    setCashAmount(String(PLAN_PRICES[p]));
+    setCashAmount(String(PLAN_PRICES[p] + (insurance ? 100 : 0)));
   };
+
+  const onInsuranceToggle = (next: boolean) => {
+    setInsurance(next);
+    const cur = parseFloat(cashAmount) || 0;
+    setCashAmount(String(Math.max(0, cur + (next ? 100 : -100))));
+  };
+
 
   const onFiles = (files: FileList | null) => {
     const f = files?.[0];

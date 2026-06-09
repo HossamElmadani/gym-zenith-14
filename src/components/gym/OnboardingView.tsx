@@ -390,6 +390,27 @@ export function OnboardingView() {
               </div>
             </div>
 
+            <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 px-3 py-2.5 flex items-start gap-3">
+              <Shield className="size-4 text-sky-400 mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium flex items-center gap-1.5">
+                  {lang === "ar" ? "تأمين سنوي" : "Annual Insurance"}
+                  <span className="text-[11px] text-sky-300">
+                    (+<bdi dir="ltr">100 {t("common.currency")}</bdi>)
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {insurance
+                    ? (lang === "ar"
+                        ? <>صالح حتى <bdi dir="ltr">{tzFormatDate(tzAddMonthsISO(tzTodayISO(startDate), 12))}</bdi></>
+                        : <>Valid until <bdi dir="ltr">{tzFormatDate(tzAddMonthsISO(tzTodayISO(startDate), 12))}</bdi></>)
+                    : (lang === "ar" ? "غير مفعّل" : "Not enabled")}
+                </p>
+              </div>
+              <Switch checked={insurance} onCheckedChange={onInsuranceToggle} aria-label="Annual insurance" />
+            </div>
+
+
             <div className="space-y-1.5 pt-2 border-t border-border/40">
               <Label className="flex items-center gap-1.5">
                 <Wallet className="size-3.5 text-success" />

@@ -56,9 +56,16 @@ export function tzDayOfWeek(d = new Date()): number {
   return map[partsOf(d).weekday] ?? new Date(d).getDay();
 }
 
-/** Full weekday name in Casablanca. */
+/** Full weekday name in Casablanca (مترجم حسب لغة التطبيق). */
 export function tzWeekdayName(d = new Date()): string {
-  return partsOf(d).weekday;
+  // جلب اللغة الحالية من localStorage
+  const lang = typeof window !== "undefined" ? localStorage.getItem("pulse.lang") || "ar" : "ar";
+  const locale = lang === "ar" ? "ar-MA" : "en-US";
+
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: APP_TZ,
+    weekday: "long",
+  }).format(d);
 }
 
 /** Days between today (Casablanca) and an ISO date (>=0). */

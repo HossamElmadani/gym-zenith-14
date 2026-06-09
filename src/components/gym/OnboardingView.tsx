@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   CalendarIcon, CheckCircle2, Dumbbell, Info, Loader2, MessageCircle,
-  Printer, ShieldCheck, Upload, User2, Wallet, X,
+  Printer, ShieldCheck, Upload, User2, Wallet, X, Sparkles,
 } from "lucide-react";
 import {
   MEMBERS, getPlanOptions, PLAN_PRICES, type PlanCode
@@ -93,32 +93,43 @@ export function OnboardingView() {
   };
 
   const cashNumber = parseFloat(cashAmount);
-  const canSubmit =
-    name.trim().length > 1 &&
-    cin.trim().length > 3 &&
-    cinStatus !== "duplicate" &&
-    cinStatus !== "checking" &&
-    phone.trim().length >= 6 &&
-    (gender === "male" || gender === "female") &&
-    cashNumber > 0;
+  
+  // شرط ذكي: إذا كان اشتراك يوم واحد، نحتاج فقط للجنس والمبلغ!
+  const canSubmit = plan === "1D" 
+    ? (gender === "male" || gender === "female") && cashNumber > 0
+    : name.trim().length > 1 &&
+      cin.trim().length > 3 &&
+      cinStatus !== "duplicate" &&
+      cinStatus !== "checking" &&
+      phone.trim().length >= 6 &&
+      (gender === "male" || gender === "female") &&
+      cashNumber > 0;
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit || !gender) return;
     setSubmitting(true);
+    
     setTimeout(() => {
       const start = tzTodayISO(startDate);
-      const months = PLAN_OPTIONS.find((p) => p.code === plan)!.months;
+      const months = PLAN_OPTIONS.find((p) => p.code === plan)?.months || 0;
       const prefix = gender === "male" ? "M" : "F";
       const next = String(
         Math.max(0, ...MEMBERS.filter((m) => m.id.startsWith(prefix + "-")).map((m) => parseInt(m.id.split("-")[1], 10) || 0)) + 1,
       ).padStart(4, "0");
       const id = `${prefix}-${next}`;
+      
+      // التوليد التلقائي لزوار الحصة الواحدة إذا كانت الحقول فارغة
+      const finalName = name.trim() || (lang === "ar" ? `زائر عابر #${next}` : `Walk-in Guest #${next}`);
+      const finalCin = cin.trim().toUpperCase() || "PASS";
+      const finalPhone = phone.trim() || "0000000000";
+
       const added = gymStore.addMember({
         id,
-        name: name.trim(),
-        cin: cin.trim().toUpperCase(),
-        phone: phone.trim(),
+        name: finalName,
+        cin: finalCin,
+        phone: finalPhone,
         gender,
         plan,
         subStart: start,
@@ -133,12 +144,14 @@ export function OnboardingView() {
         memberId: added.id, memberName: added.name,
         note: `Registration · ${plan}`,
       });
+      
       setSubmitting(false);
       setRegistered({
         id: added.id, name: added.name, cin: added.cin, phone: added.phone,
         planCode: plan, amount: cashNumber, startDate: start, endDate, gender,
       });
-      toast.success(lang === "ar" ? "تم تسجيل العضو بنجاح" : "Member registered", {
+      
+      toast.success(lang === "ar" ? "تم التسجيل بنجاح" : "Registered successfully", {
         description: `${added.name} · ${added.id} · ${lang === "ar" ? "دفع" : "paid"} ${cashNumber} ${t("common.currency")}`,
       });
     }, 600);
@@ -183,6 +196,24 @@ export function OnboardingView() {
               <User2 className="size-4 text-primary" /> {t("onboard.identity")}
             </CardTitle>
             <CardDescription>{t("onboard.identitySub")}</CardDescription>
+            <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <User2 className="size-4 text-primary" /> {t("onboard.identity")}
+            </CardTitle>
+            <CardDescription>{t("onboard.identitySub")}</CardDescription>
+            
+            {/* التنبيه الذكي يظهر فقط لاشتراك 1D */}
+            {plan === "1D" && (
+              <div className="mt-2 rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-xs text-sky-300 flex items-center gap-2">
+                <Sparkles className="size-4 shrink-0" />
+                <span>
+                  {lang === "ar" 
+                    ? "أنت في وضع الحصة الواحدة: يمكنك ترك الاسم والهاتف والبطاقة فارغة، سيقوم النظام بتوليد زائر تلقائياً. اختر الجنس فقط." 
+                    : "Day Pass Mode: Name, phone, and CIN are optional. System will auto-generate them. Just pick a gender."}
+                </span>
+              </div>
+            )}
+          </CardHeader>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">

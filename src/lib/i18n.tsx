@@ -134,6 +134,25 @@ export const DICT = {
   "common.of":            { ar: "من",                         en: "of" },
   "sync.active":          { ar: "مزامنة السحابة: نشطة",         en: "Live Sync: Active" },
   "sync.error":           { ar: "مزامنة السحابة: خطأ",          en: "Live Sync: Error" },
+
+  // Coaches View
+  "coach.menOnly":          { ar: "للرجال فقط", en: "Men Only" },
+  "coach.womenOnly":        { ar: "للنساء فقط", en: "Women Only" },
+  "coach.assignedMembers":  { ar: "الأعضاء المعينون", en: "Assigned members" },
+  "coach.autoOpened":       { ar: "مجموعة اليوم (تلقائي)", en: "Auto-opened today's group" },
+  "coach.add":              { ar: "إضافة مدرب", en: "Add Coach" },
+  
+  // Member Details / Operational View
+  "member.daysLeft":        { ar: "أيام متبقية", en: "days left" },
+  "member.status":          { ar: "الحالة", en: "Status" },
+  "member.assign":          { ar: "تعيين عضو موجود", en: "Assign Existing Member" },
+  "member.roster":          { ar: "قائمة اليوم", en: "Today's Roster" },
+  "member.operationalView": { ar: "نظرة تشغيلية فقط - لا توجد بيانات مالية.", en: "Operational view only — no financial data." },
+  
+  // Actions
+  "action.remind":          { ar: "تذكير", en: "Remind" },
+  "action.print":           { ar: "طباعة", en: "Print" },
+  "action.whatsapp":        { ar: "واتساب", en: "WhatsApp" },
 } as const satisfies Dict;
 
 export type DictKey = keyof typeof DICT;

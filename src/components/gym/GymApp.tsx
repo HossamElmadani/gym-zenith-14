@@ -13,7 +13,7 @@ import { AdminView } from "./AdminView";
 import { OnboardingView } from "./OnboardingView";
 import { MembersDirectory } from "./MembersDirectory";
 import { ReceptionDesk } from "./ReceptionDesk";
-import { QuickActionsFab } from "./QuickActionsFab";
+// import { QuickActionsFab } from "./QuickActionsFab";
 import { LoginScreen } from "./LoginScreen";
 import { StaffManagement } from "./StaffManagement";
 import { CoachesView } from "./CoachesView";
@@ -173,7 +173,7 @@ function Workspace() {
         )}
       </main>
 
-      <QuickActionsFab onQuickOnboard={() => setView("onboard")} role={role} />
+      {/* <QuickActionsFab onQuickOnboard={() => setView("onboard")} role={role} /> */}
     </div>
   );
 }

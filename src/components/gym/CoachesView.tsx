@@ -93,7 +93,7 @@ export function CoachesView() {
         </TabsContent>
       </Tabs>
 
-      <CoachDetailSheet coach={openCoach} onClose={() => setOpenCoach(null)} />
+      <CoachDetailSheet coach={openCoach} onClose={() => setOpenCoach(null)} activeCoaches={coaches} />
     </div>
   );
 }

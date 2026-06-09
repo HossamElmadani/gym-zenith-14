@@ -44,7 +44,8 @@ function formatLocalSchedule(c: Coach, lang: string) {
 
 export function CoachesView() {
   const { t, lang, dir } = useI18n();
-  const coaches = useCoaches();
+  const allCoaches = useCoaches();
+  const coaches = useMemo(() => allCoaches.filter((c) => c.status !== "archived"), [allCoaches]);
   useGymStore((s) => s.v);
 
   const todayMode = todayGender(new Date());

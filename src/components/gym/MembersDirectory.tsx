@@ -29,6 +29,7 @@ import { RenewDialog } from "./RenewDialog";
 import { MemberQR } from "./MemberQR";
 import { gymStore, isFrozenToday, useGymStore } from "@/lib/gym-store";
 import { useI18n } from "@/lib/i18n";
+import { InsuranceShield } from "./InsuranceShield";
 
 const initials = (n: string) => n.split(" ").map((x) => x[0]).slice(0, 2).join("");
 

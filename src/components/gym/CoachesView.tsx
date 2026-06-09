@@ -12,18 +12,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarDays, Check, ChevronsUpDown, Clock, Copy, Dumbbell, Plus, Sparkles, User2, UserPlus, Users2 } from "lucide-react";
+import { CalendarDays, Check, ChevronsUpDown, Clock, Copy, Dumbbell, Plus, Sparkles, User2, UserPlus, Users2, Archive, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   useCoaches, coachStore, formatSchedule, WEEKDAYS, ALLOWED_DAYS, isDayAllowed,
+  getCoachBillingCycle,
   type Coach, type CoachAudience, type Weekday,
 } from "@/lib/coaches-data";
 import { MEMBERS, todayGender, daysRemaining, subStatus, type Member } from "@/lib/gym-data";
 import { useGymStore, gymStore } from "@/lib/gym-store";
-import { tzDayOfWeek } from "@/lib/gym-tz";
+import { tzDayOfWeek, tzFormatDate, tzTodayISO } from "@/lib/gym-tz";
 import { buildWaLink } from "./WhatsAppButton";
 import { useI18n } from "@/lib/i18n";
+import { InsuranceShield } from "./InsuranceShield";
 
 const audienceTheme = {
   men:   { ring: "ring-blue-500/40", border: "border-blue-500/40", bg: "bg-blue-500/10", text: "text-blue-300", chip: "bg-blue-500/15 text-blue-300 border-blue-500/30", dot: "bg-blue-500" },

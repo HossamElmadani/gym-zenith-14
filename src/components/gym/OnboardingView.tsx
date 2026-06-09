@@ -134,6 +134,9 @@ export function OnboardingView() {
       const finalCin = cin.trim().toUpperCase() || "PASS";
       const finalPhone = phone.trim() || "0000000000";
 
+      const insuranceEnd = insurance ? tzAddMonthsISO(start, 12) : null;
+      const planAmount = Math.max(0, cashNumber - (insurance ? 100 : 0));
+
       const added = gymStore.addMember({
         id,
         name: finalName,
@@ -144,15 +147,24 @@ export function OnboardingView() {
         subStart: start,
         subEnd: endDate,
         subMonths: months,
-        history: [{ date: start, plan, months, amount: cashNumber }],
+        history: [{ date: start, plan, months, amount: planAmount }],
         coachId: coachId === "none" ? null : coachId,
+        insuranceEnd,
       });
       
       gymStore.logCash({
-        amount: cashNumber, kind: "registration", planCode: plan,
+        amount: planAmount, kind: "registration", planCode: plan,
         memberId: added.id, memberName: added.name,
         note: `Registration · ${plan}`,
       });
+
+      if (insurance) {
+        gymStore.logCash({
+          amount: 100, kind: "other",
+          memberId: added.id, memberName: added.name,
+          note: lang === "ar" ? "تأمين سنوي" : "Annual insurance",
+        });
+      }
       
       setSubmitting(false);
       setRegistered({
@@ -170,7 +182,7 @@ export function OnboardingView() {
     setName(""); setCin(""); setCinStatus("idle"); setPhone("");
     setGender(""); setAvatar(null); setPlan("3M");
     setStartDate(new Date()); setCashAmount(String(PLAN_PRICES["3M"]));
-    setCoachId("none");
+    setCoachId("none"); setInsurance(false);
     setRegistered(null);
   };
 

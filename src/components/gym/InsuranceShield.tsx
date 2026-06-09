@@ -26,11 +26,12 @@ export function InsuranceShield({
     ? `Insurance expiring in ${days} day${days === 1 ? "" : "s"}`
     : `Insurance valid · ${days} days left`;
   return (
-    <Shield
-      aria-label="Annual insurance"
-      title={title}
-      style={{ width: size, height: size }}
-      className={cn("shrink-0 inline-block", tone, className)}
-    />
+    <span title={title} className="inline-flex items-center">
+      <Shield
+        aria-label="Annual insurance"
+        style={{ width: size, height: size }}
+        className={cn("shrink-0 inline-block", tone, className)}
+      />
+    </span>
   );
 }

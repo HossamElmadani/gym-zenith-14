@@ -30,6 +30,8 @@ export function isDayAllowed(audience: CoachAudience, day: Weekday) {
   return ALLOWED_DAYS[audience].includes(day);
 }
 
+export type CoachStatus = "active" | "archived";
+
 export type Coach = {
   id: string;
   name: string;
@@ -39,7 +41,25 @@ export type Coach = {
   endTime: string;       // "HH:MM"
   audience: CoachAudience;
   createdAt: string;
+  joinedAt: string;      // ISO date — drives billing cycle anchor
+  status: CoachStatus;
 };
+
+/** Compute the current active billing cycle (1 month) anchored on joinedAt's day-of-month. */
+export function getCoachBillingCycle(joinedAt: string, today: string): { start: string; end: string } {
+  const j = new Date(`${joinedAt}T00:00:00Z`);
+  const t = new Date(`${today}T00:00:00Z`);
+  const anchorDay = j.getUTCDate();
+  let start = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), anchorDay));
+  if (start.getTime() > t.getTime()) {
+    start = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() - 1, anchorDay));
+  }
+  const end = new Date(start);
+  end.setUTCMonth(end.getUTCMonth() + 1);
+  end.setUTCDate(end.getUTCDate() - 1);
+  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+}
+
 
 /** Render coach.workingDays + times into a human-readable line. */
 export function formatSchedule(c: Coach): string {

@@ -43,6 +43,7 @@ export function OnboardingView() {
   const [plan, setPlan] = useState<PlanCode>("3M");
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [cashAmount, setCashAmount] = useState<string>(String(PLAN_PRICES["3M"]));
+  const [insurance, setInsurance] = useState<boolean>(false);
   const [coachId, setCoachId] = useState<string>("none");
   const coaches = useCoaches();
   const eligibleCoaches = useMemo(

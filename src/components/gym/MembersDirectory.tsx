@@ -105,7 +105,7 @@ export function MembersDirectory() {
                       <AvatarFallback className="bg-warning/20 text-warning text-xs font-semibold">{initials(m.name)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{m.name}</div>
+                      <div className="text-sm font-medium truncate flex items-center gap-1.5"><span className="truncate">{m.name}</span><InsuranceShield insuranceEnd={m.insuranceEnd} /></div>
                       <div className="text-xs text-muted-foreground"><bdi>{d} {t("common.days")}</bdi> · <bdi dir="ltr">{planLabel}</bdi></div>
                     </div>
                     <Button size="sm" variant="secondary" className="h-8" onClick={() => setRenewFor(m)}>

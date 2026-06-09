@@ -298,11 +298,12 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
   );
 }
 
-function CoachDetailSheet({ coach, onClose }: { coach: Coach | null; onClose: () => void }) {
+function CoachDetailSheet({ coach, onClose, activeCoaches }: { coach: Coach | null; onClose: () => void; activeCoaches: Coach[] }) {
   const { t, lang } = useI18n();
   useGymStore((s) => s.v);
   const [assignOpen, setAssignOpen] = useState(false);
-  
+  const [archiveOpen, setArchiveOpen] = useState(false);
+
   if (!coach) return null;
   const theme = audienceTheme[coach.audience];
   const members = MEMBERS.filter((m) => m.coachId === coach.id);
@@ -310,6 +311,9 @@ function CoachDetailSheet({ coach, onClose }: { coach: Coach | null; onClose: ()
   const isWorkingToday = coach.workingDays.includes(todayIdx);
   const todayRoster = isWorkingToday ? members : [];
   const audienceLabel = coach.audience === "men" ? t("coach.menOnly") : t("coach.womenOnly");
+  const cycle = getCoachBillingCycle(coach.joinedAt, tzTodayISO());
+  const activeInCycle = members.filter((m) => daysRemaining(m.subEnd) > 0).length;
+  const replacementOptions = activeCoaches.filter((c) => c.id !== coach.id && c.audience === coach.audience);
 
   return (
     <Sheet open={!!coach} onOpenChange={(b) => !b && onClose()}>
@@ -333,7 +337,27 @@ function CoachDetailSheet({ coach, onClose }: { coach: Coach | null; onClose: ()
             <span className="text-muted-foreground">{lang === "ar" ? "الجدول:" : "Schedule:"}</span>
             <span className="font-medium"><bdi>{formatLocalSchedule(coach, lang)}</bdi></span>
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-border/40 bg-card/40 p-3">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "تاريخ الالتحاق" : "Joined"}</div>
+              <div className="text-sm font-medium mt-0.5"><bdi dir="ltr">{tzFormatDate(coach.joinedAt)}</bdi></div>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-card/40 p-3">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "الدورة الحالية" : "Current Cycle"}</div>
+              <div className="text-xs font-medium mt-0.5"><bdi dir="ltr">{tzFormatDate(cycle.start)} → {tzFormatDate(cycle.end)}</bdi></div>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-card/40 p-3 col-span-2 flex items-center justify-between">
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "الأعضاء النشطون في الدورة" : "Active members this cycle"}</div>
+                <div className={cn("text-lg font-semibold", theme.text)}><bdi dir="ltr">{activeInCycle}</bdi></div>
+              </div>
+              <Button variant="outline" size="sm" className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setArchiveOpen(true)}>
+                <Archive className="size-3.5" /> {lang === "ar" ? "أرشفة المدرب" : "Archive Coach"}
+              </Button>
+            </div>
+          </div>
         </SheetHeader>
+
 
         <div className="mt-6 space-y-3">
           <div className="flex items-center justify-between">

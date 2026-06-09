@@ -11,9 +11,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 import {
   CalendarIcon, CheckCircle2, Dumbbell, Info, Loader2, MessageCircle,
-  Printer, ShieldCheck, Upload, User2, Wallet, X, Sparkles,
+  Printer, Shield, ShieldCheck, Upload, User2, Wallet, X, Sparkles,
 } from "lucide-react";
 import {
   MEMBERS, getPlanOptions, PLAN_PRICES, type PlanCode
@@ -42,6 +43,7 @@ export function OnboardingView() {
   const [plan, setPlan] = useState<PlanCode>("3M");
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [cashAmount, setCashAmount] = useState<string>(String(PLAN_PRICES["3M"]));
+  const [insurance, setInsurance] = useState<boolean>(false);
   const [coachId, setCoachId] = useState<string>("none");
   const coaches = useCoaches();
   const eligibleCoaches = useMemo(
@@ -80,8 +82,15 @@ export function OnboardingView() {
 
   const onPlanChange = (p: PlanCode) => {
     setPlan(p);
-    setCashAmount(String(PLAN_PRICES[p]));
+    setCashAmount(String(PLAN_PRICES[p] + (insurance ? 100 : 0)));
   };
+
+  const onInsuranceToggle = (next: boolean) => {
+    setInsurance(next);
+    const cur = parseFloat(cashAmount) || 0;
+    setCashAmount(String(Math.max(0, cur + (next ? 100 : -100))));
+  };
+
 
   const onFiles = (files: FileList | null) => {
     const f = files?.[0];
@@ -125,6 +134,9 @@ export function OnboardingView() {
       const finalCin = cin.trim().toUpperCase() || "PASS";
       const finalPhone = phone.trim() || "0000000000";
 
+      const insuranceEnd = insurance ? tzAddMonthsISO(start, 12) : null;
+      const planAmount = Math.max(0, cashNumber - (insurance ? 100 : 0));
+
       const added = gymStore.addMember({
         id,
         name: finalName,
@@ -135,15 +147,24 @@ export function OnboardingView() {
         subStart: start,
         subEnd: endDate,
         subMonths: months,
-        history: [{ date: start, plan, months, amount: cashNumber }],
+        history: [{ date: start, plan, months, amount: planAmount }],
         coachId: coachId === "none" ? null : coachId,
+        insuranceEnd,
       });
       
       gymStore.logCash({
-        amount: cashNumber, kind: "registration", planCode: plan,
+        amount: planAmount, kind: "registration", planCode: plan,
         memberId: added.id, memberName: added.name,
         note: `Registration · ${plan}`,
       });
+
+      if (insurance) {
+        gymStore.logCash({
+          amount: 100, kind: "other",
+          memberId: added.id, memberName: added.name,
+          note: lang === "ar" ? "تأمين سنوي" : "Annual insurance",
+        });
+      }
       
       setSubmitting(false);
       setRegistered({
@@ -161,7 +182,7 @@ export function OnboardingView() {
     setName(""); setCin(""); setCinStatus("idle"); setPhone("");
     setGender(""); setAvatar(null); setPlan("3M");
     setStartDate(new Date()); setCashAmount(String(PLAN_PRICES["3M"]));
-    setCoachId("none");
+    setCoachId("none"); setInsurance(false);
     setRegistered(null);
   };
 
@@ -368,6 +389,27 @@ export function OnboardingView() {
                 <Badge variant="secondary" className="bg-accent text-foreground text-[10px]">auto</Badge>
               </div>
             </div>
+
+            <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 px-3 py-2.5 flex items-start gap-3">
+              <Shield className="size-4 text-sky-400 mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium flex items-center gap-1.5">
+                  {lang === "ar" ? "تأمين سنوي" : "Annual Insurance"}
+                  <span className="text-[11px] text-sky-300">
+                    (+<bdi dir="ltr">100 {t("common.currency")}</bdi>)
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {insurance
+                    ? (lang === "ar"
+                        ? <>صالح حتى <bdi dir="ltr">{tzFormatDate(tzAddMonthsISO(tzTodayISO(startDate), 12))}</bdi></>
+                        : <>Valid until <bdi dir="ltr">{tzFormatDate(tzAddMonthsISO(tzTodayISO(startDate), 12))}</bdi></>)
+                    : (lang === "ar" ? "غير مفعّل" : "Not enabled")}
+                </p>
+              </div>
+              <Switch checked={insurance} onCheckedChange={onInsuranceToggle} aria-label="Annual insurance" />
+            </div>
+
 
             <div className="space-y-1.5 pt-2 border-t border-border/40">
               <Label className="flex items-center gap-1.5">

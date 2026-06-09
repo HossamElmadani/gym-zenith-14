@@ -27,6 +27,8 @@ export type Member = {
   recentCheckIns: string[];
   createdAt: string;
   coachId?: string | null;
+  /** Annual insurance (assurance) expiry date — ISO YYYY-MM-DD. */
+  insuranceEnd?: string | null;
 };
 
 export const PLAN_PRICES: Record<PlanCode, number> = {

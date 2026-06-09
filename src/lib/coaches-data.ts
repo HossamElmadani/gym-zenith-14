@@ -30,6 +30,8 @@ export function isDayAllowed(audience: CoachAudience, day: Weekday) {
   return ALLOWED_DAYS[audience].includes(day);
 }
 
+export type CoachStatus = "active" | "archived";
+
 export type Coach = {
   id: string;
   name: string;
@@ -39,7 +41,25 @@ export type Coach = {
   endTime: string;       // "HH:MM"
   audience: CoachAudience;
   createdAt: string;
+  joinedAt: string;      // ISO date — drives billing cycle anchor
+  status: CoachStatus;
 };
+
+/** Compute the current active billing cycle (1 month) anchored on joinedAt's day-of-month. */
+export function getCoachBillingCycle(joinedAt: string, today: string): { start: string; end: string } {
+  const j = new Date(`${joinedAt}T00:00:00Z`);
+  const t = new Date(`${today}T00:00:00Z`);
+  const anchorDay = j.getUTCDate();
+  let start = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), anchorDay));
+  if (start.getTime() > t.getTime()) {
+    start = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() - 1, anchorDay));
+  }
+  const end = new Date(start);
+  end.setUTCMonth(end.getUTCMonth() + 1);
+  end.setUTCDate(end.getUTCDate() - 1);
+  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+}
+
 
 /** Render coach.workingDays + times into a human-readable line. */
 export function formatSchedule(c: Coach): string {
@@ -50,19 +70,34 @@ export function formatSchedule(c: Coach): string {
 
 const KEY = "pulse.coaches.v2";
 
+const todayIso = () => new Date().toISOString().slice(0, 10);
+const pastIso = (daysAgo: number) => {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - daysAgo);
+  return d.toISOString().slice(0, 10);
+};
+
 const SEED: Coach[] = [
-  { id: "C-M01", name: "Younes El Amrani", specialty: "Bodybuilding",            workingDays: [2, 4, 6], startTime: "18:00", endTime: "21:00", audience: "men",   createdAt: new Date().toISOString() },
-  { id: "C-M02", name: "Karim Bensaid",    specialty: "Strength & Powerlifting", workingDays: [2, 4, 6], startTime: "06:00", endTime: "09:00", audience: "men",   createdAt: new Date().toISOString() },
-  { id: "C-M03", name: "Reda Hakim",       specialty: "Boxing / Cardio",         workingDays: [2, 4, 6], startTime: "19:30", endTime: "21:00", audience: "men",   createdAt: new Date().toISOString() },
-  { id: "C-W01", name: "Salma Idrissi",    specialty: "Aerobics & Zumba",        workingDays: [1, 3, 5], startTime: "18:00", endTime: "20:00", audience: "women", createdAt: new Date().toISOString() },
-  { id: "C-W02", name: "Nadia Tahiri",     specialty: "Pilates & Core",          workingDays: [1, 3, 5], startTime: "09:00", endTime: "11:00", audience: "women", createdAt: new Date().toISOString() },
-  { id: "C-W03", name: "Imane Ouazzani",   specialty: "HIIT & Weight Loss",      workingDays: [1, 3, 5], startTime: "17:00", endTime: "19:00", audience: "women", createdAt: new Date().toISOString() },
+  { id: "C-M01", name: "Younes El Amrani", specialty: "Bodybuilding",            workingDays: [2, 4, 6], startTime: "18:00", endTime: "21:00", audience: "men",   createdAt: new Date().toISOString(), joinedAt: pastIso(120), status: "active" },
+  { id: "C-M02", name: "Karim Bensaid",    specialty: "Strength & Powerlifting", workingDays: [2, 4, 6], startTime: "06:00", endTime: "09:00", audience: "men",   createdAt: new Date().toISOString(), joinedAt: pastIso(78),  status: "active" },
+  { id: "C-M03", name: "Reda Hakim",       specialty: "Boxing / Cardio",         workingDays: [2, 4, 6], startTime: "19:30", endTime: "21:00", audience: "men",   createdAt: new Date().toISOString(), joinedAt: pastIso(45),  status: "active" },
+  { id: "C-W01", name: "Salma Idrissi",    specialty: "Aerobics & Zumba",        workingDays: [1, 3, 5], startTime: "18:00", endTime: "20:00", audience: "women", createdAt: new Date().toISOString(), joinedAt: pastIso(200), status: "active" },
+  { id: "C-W02", name: "Nadia Tahiri",     specialty: "Pilates & Core",          workingDays: [1, 3, 5], startTime: "09:00", endTime: "11:00", audience: "women", createdAt: new Date().toISOString(), joinedAt: pastIso(95),  status: "active" },
+  { id: "C-W03", name: "Imane Ouazzani",   specialty: "HIIT & Weight Loss",      workingDays: [1, 3, 5], startTime: "17:00", endTime: "19:00", audience: "women", createdAt: new Date().toISOString(), joinedAt: pastIso(60),  status: "active" },
 ];
+
+function migrate(c: Coach): Coach {
+  return {
+    ...c,
+    joinedAt: c.joinedAt ?? c.createdAt?.slice(0, 10) ?? todayIso(),
+    status: c.status ?? "active",
+  };
+}
 
 function hydrate(): Coach[] {
   try {
     const raw = typeof localStorage !== "undefined" && localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw) as Coach[];
+    if (raw) return (JSON.parse(raw) as Coach[]).map(migrate);
   } catch {}
   return SEED;
 }
@@ -75,21 +110,32 @@ const emit = () => { state.v += 1; persist(); listeners.forEach((l) => l()); };
 export const coachStore = {
   list: () => state.coaches,
   get: (id: string) => state.coaches.find((c) => c.id === id),
-  add(input: Omit<Coach, "id" | "createdAt">) {
+  add(input: Omit<Coach, "id" | "createdAt" | "joinedAt" | "status"> & { joinedAt?: string; status?: CoachStatus }) {
     const prefix = input.audience === "men" ? "C-M" : "C-W";
     const nextNum = String(
       Math.max(0, ...state.coaches.filter((c) => c.id.startsWith(prefix)).map((c) => parseInt(c.id.slice(prefix.length), 10) || 0)) + 1,
     ).padStart(2, "0");
-    const coach: Coach = { id: `${prefix}${nextNum}`, createdAt: new Date().toISOString(), ...input };
+    const coach: Coach = {
+      id: `${prefix}${nextNum}`,
+      createdAt: new Date().toISOString(),
+      joinedAt: input.joinedAt ?? todayIso(),
+      status: input.status ?? "active",
+      ...input,
+    };
     state.coaches = [coach, ...state.coaches];
     emit();
     return coach;
+  },
+  archive(id: string) {
+    state.coaches = state.coaches.map((c) => (c.id === id ? { ...c, status: "archived" as const } : c));
+    emit();
   },
   remove(id: string) {
     state.coaches = state.coaches.filter((c) => c.id !== id);
     emit();
   },
 };
+
 
 export function useCoaches() {
   return useSyncExternalStore(

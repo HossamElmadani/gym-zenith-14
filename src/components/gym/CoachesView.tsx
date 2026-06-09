@@ -12,18 +12,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarDays, Check, ChevronsUpDown, Clock, Copy, Dumbbell, Plus, Sparkles, User2, UserPlus, Users2 } from "lucide-react";
+import { CalendarDays, Check, ChevronsUpDown, Clock, Copy, Dumbbell, Plus, Sparkles, User2, UserPlus, Users2, Archive, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   useCoaches, coachStore, formatSchedule, WEEKDAYS, ALLOWED_DAYS, isDayAllowed,
+  getCoachBillingCycle,
   type Coach, type CoachAudience, type Weekday,
 } from "@/lib/coaches-data";
 import { MEMBERS, todayGender, daysRemaining, subStatus, type Member } from "@/lib/gym-data";
 import { useGymStore, gymStore } from "@/lib/gym-store";
-import { tzDayOfWeek } from "@/lib/gym-tz";
+import { tzDayOfWeek, tzFormatDate, tzTodayISO } from "@/lib/gym-tz";
 import { buildWaLink } from "./WhatsAppButton";
 import { useI18n } from "@/lib/i18n";
+import { InsuranceShield } from "./InsuranceShield";
 
 const audienceTheme = {
   men:   { ring: "ring-blue-500/40", border: "border-blue-500/40", bg: "bg-blue-500/10", text: "text-blue-300", chip: "bg-blue-500/15 text-blue-300 border-blue-500/30", dot: "bg-blue-500" },
@@ -42,7 +44,8 @@ function formatLocalSchedule(c: Coach, lang: string) {
 
 export function CoachesView() {
   const { t, lang, dir } = useI18n();
-  const coaches = useCoaches();
+  const allCoaches = useCoaches();
+  const coaches = useMemo(() => allCoaches.filter((c) => c.status !== "archived"), [allCoaches]);
   useGymStore((s) => s.v);
 
   const todayMode = todayGender(new Date());
@@ -90,7 +93,7 @@ export function CoachesView() {
         </TabsContent>
       </Tabs>
 
-      <CoachDetailSheet coach={openCoach} onClose={() => setOpenCoach(null)} />
+      <CoachDetailSheet coach={openCoach} onClose={() => setOpenCoach(null)} activeCoaches={coaches} />
     </div>
   );
 }
@@ -295,11 +298,12 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
   );
 }
 
-function CoachDetailSheet({ coach, onClose }: { coach: Coach | null; onClose: () => void }) {
+function CoachDetailSheet({ coach, onClose, activeCoaches }: { coach: Coach | null; onClose: () => void; activeCoaches: Coach[] }) {
   const { t, lang } = useI18n();
   useGymStore((s) => s.v);
   const [assignOpen, setAssignOpen] = useState(false);
-  
+  const [archiveOpen, setArchiveOpen] = useState(false);
+
   if (!coach) return null;
   const theme = audienceTheme[coach.audience];
   const members = MEMBERS.filter((m) => m.coachId === coach.id);
@@ -307,6 +311,9 @@ function CoachDetailSheet({ coach, onClose }: { coach: Coach | null; onClose: ()
   const isWorkingToday = coach.workingDays.includes(todayIdx);
   const todayRoster = isWorkingToday ? members : [];
   const audienceLabel = coach.audience === "men" ? t("coach.menOnly") : t("coach.womenOnly");
+  const cycle = getCoachBillingCycle(coach.joinedAt, tzTodayISO());
+  const activeInCycle = members.filter((m) => daysRemaining(m.subEnd) > 0).length;
+  const replacementOptions = activeCoaches.filter((c) => c.id !== coach.id && c.audience === coach.audience);
 
   return (
     <Sheet open={!!coach} onOpenChange={(b) => !b && onClose()}>
@@ -330,7 +337,27 @@ function CoachDetailSheet({ coach, onClose }: { coach: Coach | null; onClose: ()
             <span className="text-muted-foreground">{lang === "ar" ? "الجدول:" : "Schedule:"}</span>
             <span className="font-medium"><bdi>{formatLocalSchedule(coach, lang)}</bdi></span>
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-border/40 bg-card/40 p-3">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "تاريخ الالتحاق" : "Joined"}</div>
+              <div className="text-sm font-medium mt-0.5"><bdi dir="ltr">{tzFormatDate(coach.joinedAt)}</bdi></div>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-card/40 p-3">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "الدورة الحالية" : "Current Cycle"}</div>
+              <div className="text-xs font-medium mt-0.5"><bdi dir="ltr">{tzFormatDate(cycle.start)} → {tzFormatDate(cycle.end)}</bdi></div>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-card/40 p-3 col-span-2 flex items-center justify-between">
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "الأعضاء النشطون في الدورة" : "Active members this cycle"}</div>
+                <div className={cn("text-lg font-semibold", theme.text)}><bdi dir="ltr">{activeInCycle}</bdi></div>
+              </div>
+              <Button variant="outline" size="sm" className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setArchiveOpen(true)}>
+                <Archive className="size-3.5" /> {lang === "ar" ? "أرشفة المدرب" : "Archive Coach"}
+              </Button>
+            </div>
+          </div>
         </SheetHeader>
+
 
         <div className="mt-6 space-y-3">
           <div className="flex items-center justify-between">
@@ -382,9 +409,106 @@ function CoachDetailSheet({ coach, onClose }: { coach: Coach | null; onClose: ()
       </SheetContent>
 
       <AssignMemberDialog open={assignOpen} onClose={() => setAssignOpen(false)} coach={coach} />
+      <ArchiveCoachDialog
+        open={archiveOpen}
+        onClose={() => setArchiveOpen(false)}
+        coach={coach}
+        assignedMembers={members}
+        replacementOptions={replacementOptions}
+        onArchived={() => { setArchiveOpen(false); onClose(); }}
+      />
     </Sheet>
   );
 }
+
+function ArchiveCoachDialog({
+  open, onClose, coach, assignedMembers, replacementOptions, onArchived,
+}: {
+  open: boolean;
+  onClose: () => void;
+  coach: Coach;
+  assignedMembers: Member[];
+  replacementOptions: Coach[];
+  onArchived: () => void;
+}) {
+  const { t, lang } = useI18n();
+  const [replacement, setReplacement] = useState<string>("");
+  const hasMembers = assignedMembers.length > 0;
+
+  const submit = () => {
+    if (hasMembers && !replacement) {
+      toast.error(lang === "ar" ? "اختر مدرباً بديلاً" : "Pick a replacement coach");
+      return;
+    }
+    if (hasMembers) {
+      assignedMembers.forEach((m) => gymStore.assignCoach(m.id, replacement));
+    }
+    coachStore.archive(coach.id);
+    toast.success(lang === "ar" ? `تمت أرشفة ${coach.name}` : `${coach.name} archived`, {
+      description: hasMembers
+        ? (lang === "ar" ? `تم تحويل ${assignedMembers.length} عضو` : `Handed over ${assignedMembers.length} member${assignedMembers.length === 1 ? "" : "s"}`)
+        : undefined,
+    });
+    setReplacement("");
+    onArchived();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(b) => !b && (setReplacement(""), onClose())}>
+      <DialogContent className="glass border-border/60 sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ShieldAlert className="size-4 text-destructive" />
+            {lang === "ar" ? "أرشفة المدرب" : "Archive Coach"}
+          </DialogTitle>
+          <DialogDescription>
+            {hasMembers
+              ? (lang === "ar"
+                  ? `لدى هذا المدرب ${assignedMembers.length} عضو معيّن. اختر مدرباً بديلاً لتسليم هؤلاء الأعضاء.`
+                  : `This coach has ${assignedMembers.length} assigned member${assignedMembers.length === 1 ? "" : "s"}. Please select a replacement coach to handover these members.`)
+              : (lang === "ar" ? "لا يوجد أعضاء معيّنون. سيتم الأرشفة مباشرة." : "No assigned members. Archive will proceed directly.")}
+          </DialogDescription>
+        </DialogHeader>
+
+        {hasMembers && (
+          <div className="space-y-2">
+            <Label>{lang === "ar" ? "المدرب البديل" : "Replacement coach"}</Label>
+            {replacementOptions.length === 0 ? (
+              <div className="text-xs text-destructive rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
+                {lang === "ar"
+                  ? "لا يوجد مدرب نشط آخر بنفس الجمهور. أضف مدرباً أولاً."
+                  : "No other active coach with the same audience. Add one first."}
+              </div>
+            ) : (
+              <select
+                value={replacement}
+                onChange={(e) => setReplacement(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background/50 px-3 text-sm"
+              >
+                <option value="">{lang === "ar" ? "اختر مدرباً…" : "Select a coach…"}</option>
+                {replacementOptions.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name} · {c.specialty}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>{t("action.cancel")}</Button>
+          <Button
+            variant="destructive"
+            onClick={submit}
+            disabled={hasMembers && replacementOptions.length === 0}
+          >
+            <Archive className="size-3.5" /> {lang === "ar" ? "أرشفة وتسليم" : "Archive & Handover"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function buildReminder(member: Member, coach: Coach, lang: string) {
   const first = member.name.split(" ")[0];
@@ -470,7 +594,7 @@ function AssignedMembersTable({ members, coach, mode }: { members: Member[]; coa
                         </AvatarFallback>
                       </Avatar>
                       <div className="leading-tight">
-                        <div className="text-sm font-medium">{m.name}</div>
+                        <div className="text-sm font-medium flex items-center gap-1.5">{m.name}<InsuranceShield insuranceEnd={m.insuranceEnd} /></div>
                         <div className="text-[10px] text-muted-foreground">{m.id}</div>
                       </div>
                     </div>

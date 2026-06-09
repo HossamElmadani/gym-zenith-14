@@ -218,10 +218,6 @@ export function OnboardingView() {
             </CardTitle>
             <CardDescription>{t("onboard.identitySub")}</CardDescription>
             <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <User2 className="size-4 text-primary" /> {t("onboard.identity")}
-            </CardTitle>
-            <CardDescription>{t("onboard.identitySub")}</CardDescription>
             
             {/* التنبيه الذكي يظهر فقط لاشتراك 1D */}
             {plan === "1D" && (

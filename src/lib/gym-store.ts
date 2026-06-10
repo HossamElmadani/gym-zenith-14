@@ -173,7 +173,7 @@ export const gymStore = {
       ...state.cash,
     ];
     emit();
-    syncCash({ memberName: entry.memberName, amount: entry.amount, kind: entry.kind });
+    syncCash({ memberName: entry.memberName, amount: entry.amount, kind: entry.kind, planCode: entry.planCode });
   },
 
   logExpense(entry: Omit<ExpenseEntry, "id" | "ts"> & { ts?: string }) {

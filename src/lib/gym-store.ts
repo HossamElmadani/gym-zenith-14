@@ -80,7 +80,7 @@ export type CashEntry = {
   memberId?: string;
   memberName?: string;
   amount: number;             // MAD
-  kind: "registration" | "renewal" | "dropin" | "other";
+  kind: "registration" | "renewal" | "dropin" | "insurance" | "other";
   planCode?: PlanCode;        // when registration/renewal
   note?: string;
 };

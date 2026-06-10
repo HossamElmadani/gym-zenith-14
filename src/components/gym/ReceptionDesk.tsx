@@ -4,119 +4,129 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Search,
-  CheckCircle,
-  Activity,
-  Clock,
-  Users,
-  AlertTriangle,
+  Search, CheckCircle, Activity, Clock, Users, AlertTriangle, Dumbbell,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
-  MEMBERS,
-  daysRemaining,
-  subStatus,
-  todayGender,
-  type Member,
+  MEMBERS, daysRemaining, subStatus, todayGender, type Member,
 } from "@/lib/gym-data";
+import { useCoaches, type Coach } from "@/lib/coaches-data";
+import { gymStore } from "@/lib/gym-store";
 import { useI18n } from "@/lib/i18n";
 
+type Role = "Member" | "Coach";
 type CheckIn = {
   id: string;
-  memberId: string;
+  personId: string;
   name: string;
-  gender: "male" | "female";
+  role: Role;
+  gender?: "male" | "female";
   ts: number;
 };
 
 const initials = (n: string) =>
-  n
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  n.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
 const formatTime = (ts: number) =>
-  new Date(ts).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 
 export function ReceptionDesk() {
   const { t, lang, dir } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<"members" | "coaches">("members");
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const coaches = useCoaches();
 
   const shift = useMemo(() => todayGender(), []);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  useEffect(() => { inputRef.current?.focus(); }, [tab]);
 
-  const checkedInIds = useMemo(
-    () => new Set(checkIns.map((c) => c.memberId)),
+  const checkedInMemberIds = useMemo(
+    () => new Set(checkIns.filter((c) => c.role === "Member").map((c) => c.personId)),
+    [checkIns],
+  );
+  const checkedInCoachIds = useMemo(
+    () => new Set(checkIns.filter((c) => c.role === "Coach").map((c) => c.personId)),
     [checkIns],
   );
 
-  const eligible = useMemo(() => {
+  const eligibleMembers = useMemo(() => {
     return MEMBERS.filter((m) => {
-      if (checkedInIds.has(m.id)) return false;
+      if (checkedInMemberIds.has(m.id)) return false;
       if (shift === "men" && m.gender !== "male") return false;
       if (shift === "women" && m.gender !== "female") return false;
       if (shift === "closed") return false;
       return true;
     });
-  }, [shift, checkedInIds]);
+  }, [shift, checkedInMemberIds]);
 
-  const filtered = useMemo(() => {
+  const filteredMembers = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return eligible;
-    return eligible.filter(
+    if (!q) return eligibleMembers;
+    return eligibleMembers.filter(
       (m) =>
         m.name.toLowerCase().includes(q) ||
         m.id.toLowerCase().includes(q) ||
         m.cin.toLowerCase().includes(q),
     );
-  }, [eligible, query]);
+  }, [eligibleMembers, query]);
 
-  const handleCheckIn = (m: Member) => {
+  const eligibleCoaches = useMemo(() => {
+    return coaches.filter((c) => {
+      if (c.status !== "active") return false;
+      if (checkedInCoachIds.has(c.id)) return false;
+      if (shift === "men"   && c.audience !== "men")   return false;
+      if (shift === "women" && c.audience !== "women") return false;
+      if (shift === "closed") return false;
+      return true;
+    });
+  }, [coaches, shift, checkedInCoachIds]);
+
+  const filteredCoaches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return eligibleCoaches;
+    return eligibleCoaches.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.id.toLowerCase().includes(q) ||
+        c.specialty.toLowerCase().includes(q),
+    );
+  }, [eligibleCoaches, query]);
+
+  const handleCheckInMember = (m: Member) => {
     if (daysRemaining(m.subEnd) <= 0) {
-      toast.error(
-        lang === "ar"
-          ? `الاشتراك منتهي: ${m.name}`
-          : `Subscription expired: ${m.name}`,
-      );
+      toast.error(lang === "ar" ? `الاشتراك منتهي: ${m.name}` : `Subscription expired: ${m.name}`);
       return;
     }
+    gymStore.recordCheckIn(m.id);
     setCheckIns((prev) => [
-      {
-        id: `${m.id}-${Date.now()}`,
-        memberId: m.id,
-        name: m.name,
-        gender: m.gender,
-        ts: Date.now(),
-      },
+      { id: `${m.id}-${Date.now()}`, personId: m.id, name: m.name, role: "Member", gender: m.gender, ts: Date.now() },
       ...prev,
     ]);
-    toast.success(
-      lang === "ar"
-        ? `تم تسجيل دخول: ${m.name}`
-        : `Check-in successful for ${m.name}`,
-    );
+    toast.success(lang === "ar" ? `تم تسجيل دخول: ${m.name}` : `Check-in successful for ${m.name}`);
+    setQuery("");
+    inputRef.current?.focus();
+  };
+
+  const handleCheckInCoach = (c: Coach) => {
+    gymStore.recordCoachAttendance(c.name);
+    setCheckIns((prev) => [
+      { id: `${c.id}-${Date.now()}`, personId: c.id, name: c.name, role: "Coach", ts: Date.now() },
+      ...prev,
+    ]);
+    toast.success(lang === "ar" ? `تم تسجيل المدرب: ${c.name}` : `Coach checked in: ${c.name}`);
+    setQuery("");
     inputRef.current?.focus();
   };
 
   const shiftLabel =
-    shift === "men"
-      ? t("shift.men")
-      : shift === "women"
-        ? t("shift.women")
-        : t("shift.closed");
+    shift === "men" ? t("shift.men")
+    : shift === "women" ? t("shift.women")
+    : t("shift.closed");
 
   return (
     <div dir={dir} className="grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -136,18 +146,14 @@ export function ReceptionDesk() {
             <div className="mt-1 text-4xl font-semibold tracking-tight">
               <bdi dir="ltr">{checkIns.length}</bdi>
             </div>
-            <div className="mt-2 text-[11px] text-muted-foreground">
-              {shiftLabel}
-            </div>
+            <div className="mt-2 text-[11px] text-muted-foreground">{shiftLabel}</div>
           </div>
 
           <div className="space-y-2 max-h-[520px] overflow-auto pr-1">
             {checkIns.length === 0 && (
               <div className="text-sm text-muted-foreground py-10 text-center">
                 <Users className="size-8 mx-auto mb-2 opacity-40" />
-                {lang === "ar"
-                  ? "في انتظار أول تسجيل دخول…"
-                  : "Waiting for first check-in…"}
+                {lang === "ar" ? "في انتظار أول تسجيل دخول…" : "Waiting for first check-in…"}
               </div>
             )}
             {checkIns.map((c) => (
@@ -160,18 +166,27 @@ export function ReceptionDesk() {
                     <AvatarFallback
                       className={cn(
                         "text-[11px]",
-                        c.gender === "male"
-                          ? "bg-mens/20 text-mens-foreground"
-                          : "bg-womens/20 text-womens-foreground",
+                        c.role === "Coach"
+                          ? "bg-primary/20 text-primary"
+                          : c.gender === "male"
+                            ? "bg-mens/20 text-mens-foreground"
+                            : "bg-womens/20 text-womens-foreground",
                       )}
                     >
                       {initials(c.name)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{c.name}</div>
+                    <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                      {c.name}
+                      {c.role === "Coach" && (
+                        <Badge variant="outline" className="px-1.5 py-0 text-[9px] border-primary/30 text-primary">
+                          {lang === "ar" ? "مدرب" : "Coach"}
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-[11px] text-muted-foreground">
-                      <bdi dir="ltr">{c.memberId}</bdi>
+                      <bdi dir="ltr">{c.personId}</bdi>
                     </div>
                   </div>
                 </div>
@@ -195,58 +210,70 @@ export function ReceptionDesk() {
                   {lang === "ar" ? "تسجيل دخول ذكي" : "Smart Visual Check-in"}
                 </div>
                 <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-                  {lang === "ar"
-                    ? "اختر العضو لتسجيل الدخول"
-                    : "Tap a member to check in"}
+                  {lang === "ar" ? "اختر الشخص لتسجيل الدخول" : "Tap a person to check in"}
                 </h2>
               </div>
-              <Badge
-                variant="secondary"
-                className="self-start sm:self-auto bg-primary/10 text-primary border border-primary/20"
-              >
+              <Badge variant="secondary" className="self-start sm:self-auto bg-primary/10 text-primary border border-primary/20">
                 {shiftLabel}
               </Badge>
             </div>
 
-            <div className="relative">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input
-                ref={inputRef}
-                autoFocus
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={
-                  lang === "ar"
-                    ? "ابحث بالاسم أو رقم العضو…"
-                    : "Search by name or ID…"
-                }
-                className="h-12 ps-10 bg-background/50 rounded-xl"
-              />
-            </div>
+            <Tabs value={tab} onValueChange={(v) => { setTab(v as "members" | "coaches"); setQuery(""); }}>
+              <TabsList className="grid grid-cols-2 w-full sm:w-72">
+                <TabsTrigger value="members" className="gap-1.5">
+                  <Users className="size-4" />
+                  {lang === "ar" ? "الأعضاء" : "Members"}
+                </TabsTrigger>
+                <TabsTrigger value="coaches" className="gap-1.5">
+                  <Dumbbell className="size-4" />
+                  {lang === "ar" ? "المدربون" : "Coaches"}
+                </TabsTrigger>
+              </TabsList>
 
-            {shift === "closed" ? (
-              <div className="rounded-xl border border-dashed border-border/60 p-10 text-center text-muted-foreground">
-                <AlertTriangle className="size-8 mx-auto mb-2 opacity-50" />
-                {t("shift.closed")}
+              <div className="relative mt-4">
+                <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  ref={inputRef}
+                  autoFocus
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={
+                    tab === "members"
+                      ? (lang === "ar" ? "ابحث بالاسم أو رقم العضو…" : "Search member by name or ID…")
+                      : (lang === "ar" ? "ابحث عن مدرب…" : "Search coach by name…")
+                  }
+                  className="h-12 ps-10 bg-background/50 rounded-xl"
+                />
               </div>
-            ) : filtered.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border/60 p-10 text-center text-muted-foreground text-sm">
-                {lang === "ar"
-                  ? "لا يوجد أعضاء مطابقون."
-                  : "No matching members."}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[640px] overflow-auto pr-1">
-                {filtered.map((m) => (
-                  <MemberCheckInCard
-                    key={m.id}
-                    member={m}
-                    lang={lang}
-                    onCheckIn={handleCheckIn}
-                  />
-                ))}
-              </div>
-            )}
+
+              <TabsContent value="members" className="mt-4">
+                {shift === "closed" ? (
+                  <ClosedState label={t("shift.closed")} />
+                ) : filteredMembers.length === 0 ? (
+                  <EmptyState text={lang === "ar" ? "لا يوجد أعضاء مطابقون." : "No matching members."} />
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[640px] overflow-auto pr-1">
+                    {filteredMembers.map((m) => (
+                      <MemberCheckInCard key={m.id} member={m} lang={lang} onCheckIn={handleCheckInMember} />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="coaches" className="mt-4">
+                {shift === "closed" ? (
+                  <ClosedState label={t("shift.closed")} />
+                ) : filteredCoaches.length === 0 ? (
+                  <EmptyState text={lang === "ar" ? "لا يوجد مدربون نشطون لهذا الدوام." : "No active coaches for this shift."} />
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[640px] overflow-auto pr-1">
+                    {filteredCoaches.map((c) => (
+                      <CoachCheckInCard key={c.id} coach={c} lang={lang} onCheckIn={handleCheckInCoach} />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
@@ -254,38 +281,41 @@ export function ReceptionDesk() {
   );
 }
 
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-border/60 p-10 text-center text-muted-foreground text-sm">
+      {text}
+    </div>
+  );
+}
+
+function ClosedState({ label }: { label: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-border/60 p-10 text-center text-muted-foreground">
+      <AlertTriangle className="size-8 mx-auto mb-2 opacity-50" />
+      {label}
+    </div>
+  );
+}
+
 function MemberCheckInCard({
-  member,
-  lang,
-  onCheckIn,
+  member, lang, onCheckIn,
 }: {
-  member: Member;
-  lang: "ar" | "en";
-  onCheckIn: (m: Member) => void;
+  member: Member; lang: "ar" | "en"; onCheckIn: (m: Member) => void;
 }) {
   const days = daysRemaining(member.subEnd);
   const status = subStatus(member.subEnd);
   const expired = status === "expired";
 
   const statusTone =
-    status === "active"
-      ? "bg-success/20 text-success border-success/30"
-      : status === "expiring"
-        ? "bg-warning/20 text-warning border-warning/30"
-        : "bg-destructive/20 text-destructive border-destructive/30";
+    status === "active"   ? "bg-success/20 text-success border-success/30"
+  : status === "expiring" ? "bg-warning/20 text-warning border-warning/30"
+                          : "bg-destructive/20 text-destructive border-destructive/30";
 
   const statusLabel =
-    status === "active"
-      ? lang === "ar"
-        ? "نشط"
-        : "Active"
-      : status === "expiring"
-        ? lang === "ar"
-          ? "قارب الانتهاء"
-          : "Expiring"
-        : lang === "ar"
-          ? "منتهي"
-          : "Expired";
+    status === "active"   ? (lang === "ar" ? "نشط" : "Active")
+  : status === "expiring" ? (lang === "ar" ? "قارب الانتهاء" : "Expiring")
+                          : (lang === "ar" ? "منتهي" : "Expired");
 
   return (
     <div
@@ -299,9 +329,7 @@ function MemberCheckInCard({
           <AvatarFallback
             className={cn(
               "text-sm font-semibold",
-              member.gender === "male"
-                ? "bg-mens/25 text-foreground"
-                : "bg-womens/25 text-foreground",
+              member.gender === "male" ? "bg-mens/25 text-foreground" : "bg-womens/25 text-foreground",
             )}
           >
             {initials(member.name)}
@@ -316,16 +344,11 @@ function MemberCheckInCard({
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <Badge
-          variant="outline"
-          className={cn("text-[10px] px-2 py-0.5", statusTone)}
-        >
+        <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", statusTone)}>
           {statusLabel}
         </Badge>
         <div className="text-[11px] text-muted-foreground">
-          <bdi dir="ltr">
-            {days > 0 ? days : 0}d {lang === "ar" ? "" : "left"}
-          </bdi>
+          <bdi dir="ltr">{days > 0 ? days : 0}d {lang === "ar" ? "" : "left"}</bdi>
         </div>
       </div>
 
@@ -335,19 +358,50 @@ function MemberCheckInCard({
         size="sm"
         className={cn(
           "w-full gap-1.5",
-          expired &&
-            "bg-destructive/20 text-destructive hover:bg-destructive/20 cursor-not-allowed",
+          expired && "bg-destructive/20 text-destructive hover:bg-destructive/20 cursor-not-allowed",
         )}
         variant={expired ? "secondary" : "default"}
       >
         <CheckCircle className="size-4" />
         {expired
-          ? lang === "ar"
-            ? "منتهي"
-            : "Expired"
-          : lang === "ar"
-            ? "تسجيل الدخول"
-            : "Check-in"}
+          ? (lang === "ar" ? "منتهي" : "Expired")
+          : (lang === "ar" ? "تسجيل الدخول" : "Check-in")}
+      </Button>
+    </div>
+  );
+}
+
+function CoachCheckInCard({
+  coach, lang, onCheckIn,
+}: {
+  coach: Coach; lang: "ar" | "en"; onCheckIn: (c: Coach) => void;
+}) {
+  return (
+    <div className="group rounded-2xl border border-border/60 bg-card/40 p-3 flex flex-col gap-3 transition-all hover:border-primary/40 hover:bg-card/60">
+      <div className="flex items-center gap-3 min-w-0">
+        <Avatar className="size-11 shrink-0">
+          <AvatarFallback className="text-sm font-semibold bg-primary/20 text-primary">
+            {initials(coach.name)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold truncate">{coach.name}</div>
+          <div className="text-[11px] text-muted-foreground truncate">{coach.specialty}</div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-primary/30 text-primary">
+          {lang === "ar" ? "مدرب" : "Coach"}
+        </Badge>
+        <div className="text-[11px] text-muted-foreground">
+          <bdi dir="ltr">{coach.startTime}–{coach.endTime}</bdi>
+        </div>
+      </div>
+
+      <Button onClick={() => onCheckIn(coach)} size="sm" className="w-full gap-1.5">
+        <CheckCircle className="size-4" />
+        {lang === "ar" ? "بدء الحصة" : "Start shift"}
       </Button>
     </div>
   );

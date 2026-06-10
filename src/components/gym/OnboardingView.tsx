@@ -160,7 +160,7 @@ export function OnboardingView() {
 
       if (insurance) {
         gymStore.logCash({
-          amount: 100, kind: "other",
+          amount: 100, kind: "insurance",
           memberId: added.id, memberName: added.name,
           note: lang === "ar" ? "تأمين سنوي" : "Annual insurance",
         });

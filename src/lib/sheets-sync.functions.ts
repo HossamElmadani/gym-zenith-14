@@ -1,12 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_sheets/v4";
-const MEMBERS_TAB = "Members_Log";
-const CASH_TAB = "Cash_Flow_Log";
+
+// ---------------------------------------------------------------------------
+// PHASE 4 — Relational Google Sheets Sync
+// Four tabs, each acting as an append-only ledger so the spreadsheet behaves
+// like a lightweight relational warehouse.
+// ---------------------------------------------------------------------------
+const MEMBERS_TAB     = "Members";
+const FINANCIALS_TAB  = "Financials";
+const ATTENDANCE_TAB  = "Attendance";
+const COACHES_TAB     = "Coaches_Cycle";
 
 const HEADERS: Record<string, string[]> = {
-  [MEMBERS_TAB]: ["Timestamp", "Full Name", "CIN", "Phone", "Gender", "Plan", "End Date"],
-  [CASH_TAB]:    ["Timestamp", "Member Name", "Amount (MAD)", "Transaction Type"],
+  [MEMBERS_TAB]:    ["ID", "Name", "Phone", "Gender", "Current Coach", "Sub End Date", "Insurance End Date"],
+  [FINANCIALS_TAB]: ["Date", "Member Name", "Transaction Type", "Amount (MAD)"],
+  [ATTENDANCE_TAB]: ["Date & Time", "Person Name", "Role"],
+  [COACHES_TAB]:    ["Coach Name", "Cycle Start Date", "Cycle End Date", "Active Members Count"],
 };
 
 function authHeaders() {
@@ -33,7 +43,6 @@ async function ensureTab(tab: string) {
   if (ensured.has(tab)) return;
   const { sheetId, headers } = authHeaders();
 
-  // List existing sheets
   const metaRes = await fetch(
     `${GATEWAY_URL}/spreadsheets/${sheetId}?fields=sheets.properties.title`,
     { headers },
@@ -52,7 +61,6 @@ async function ensureTab(tab: string) {
     if (!addRes.ok) {
       throw new Error(`Sheets addSheet failed (${addRes.status}): ${(await addRes.text()).slice(0, 200)}`);
     }
-    // Seed header row
     const hdr = HEADERS[tab];
     if (hdr) {
       await fetch(
@@ -78,22 +86,60 @@ async function appendRow(tab: string, row: (string | number)[]) {
   return { ok: true as const };
 }
 
+// ---------------------------------------------------------------------------
+// Public server functions — one per relational tab.
+// ---------------------------------------------------------------------------
+
 export const appendMemberLog = createServerFn({ method: "POST" })
   .inputValidator((data: {
-    timestamp: string; name: string; cin: string; phone: string;
-    gender: string; plan: string; endDate: string;
+    id: string; name: string; phone: string; gender: string;
+    coach: string; subEnd: string; insuranceEnd: string;
   }) => data)
   .handler(async ({ data }) =>
-    appendRow(MEMBERS_TAB, [data.timestamp, data.name, data.cin, data.phone, data.gender, data.plan, data.endDate]),
+    appendRow(MEMBERS_TAB, [data.id, data.name, data.phone, data.gender, data.coach, data.subEnd, data.insuranceEnd]),
   );
 
+export const appendFinancialLog = createServerFn({ method: "POST" })
+  .inputValidator((data: {
+    date: string; memberName: string; transactionType: string; amount: number;
+  }) => data)
+  .handler(async ({ data }) =>
+    appendRow(FINANCIALS_TAB, [data.date, data.memberName, data.transactionType, data.amount]),
+  );
+
+export const appendAttendanceLog = createServerFn({ method: "POST" })
+  .inputValidator((data: {
+    dateTime: string; personName: string; role: "Member" | "Coach";
+  }) => data)
+  .handler(async ({ data }) =>
+    appendRow(ATTENDANCE_TAB, [data.dateTime, data.personName, data.role]),
+  );
+
+export const appendCoachCycleLog = createServerFn({ method: "POST" })
+  .inputValidator((data: {
+    coachName: string; cycleStart: string; cycleEnd: string; activeMembers: number;
+  }) => data)
+  .handler(async ({ data }) =>
+    appendRow(COACHES_TAB, [data.coachName, data.cycleStart, data.cycleEnd, data.activeMembers]),
+  );
+
+// Backwards-compat shim: old cash-log callsites map into the new Financials tab.
 export const appendCashLog = createServerFn({ method: "POST" })
   .inputValidator((data: {
     timestamp: string; memberName: string; amount: number; kind: string;
   }) => data)
-  .handler(async ({ data }) =>
-    appendRow(CASH_TAB, [data.timestamp, data.memberName, data.amount, data.kind]),
-  );
+  .handler(async ({ data }) => {
+    const map: Record<string, string> = {
+      registration: "Plan",
+      renewal:      "Plan",
+      dropin:       "1D Pass",
+      insurance:    "Insurance",
+      other:        "Other",
+    };
+    const transactionType = map[data.kind] ?? data.kind;
+    return appendRow(FINANCIALS_TAB,
+      [data.timestamp, data.memberName, transactionType, data.amount]);
+  });
 
 export const checkSheetsHealth = createServerFn({ method: "GET" }).handler(async () => {
   const ok = Boolean(process.env.LOVABLE_API_KEY && process.env.GOOGLE_SHEETS_API_KEY && process.env.GYM_SHEET_ID);

@@ -258,7 +258,7 @@ export const gymStore = {
     ];
     emit();
     syncMember(m);
-    syncCash({ memberName: m.name, amount: amountPaid, kind: "renewal" });
+    syncCash({ memberName: m.name, amount: amountPaid, kind: "renewal", planCode });
     return m;
   },
 
@@ -269,6 +269,11 @@ export const gymStore = {
     m.recentCheckIns = [tzTodayISO(), ...m.recentCheckIns].slice(0, 20);
     persistMembers();
     emit();
+    syncAttendance(m.name, "Member");
+  },
+
+  recordCoachAttendance(coachName: string) {
+    syncAttendance(coachName, "Coach");
   },
 
   freezeMember(memberId: string, win: FreezeWindow) {

@@ -3,7 +3,10 @@ import {
   MEMBERS, persistMembers, PLAN_PRICES, PLAN_MONTHS, type Member, type PlanCode,
 } from "./gym-data";
 import { tzAddMonthsISO, tzDaysUntil, tzTodayISO } from "./gym-tz";
-import { appendCashLog, appendMemberLog } from "./sheets-sync.functions";
+import {
+  appendAttendanceLog, appendFinancialLog, appendMemberLog,
+} from "./sheets-sync.functions";
+import { coachStore } from "./coaches-data";
 
 // ---------------------------------------------------------------------------
 // LIVE GOOGLE SHEETS SYNC (fire-and-forget; never blocks UI)
@@ -21,21 +24,45 @@ export function subscribeSyncStatus(l: () => void) {
 }
 export function getSyncError() { return lastSyncError; }
 
+const KIND_TO_TX: Record<string, string> = {
+  registration: "Plan",
+  renewal:      "Plan",
+  dropin:       "1D Pass",
+  insurance:    "Insurance",
+  other:        "Other",
+};
+
+function coachNameFor(coachId?: string | null): string {
+  if (!coachId) return "—";
+  return coachStore.get(coachId)?.name ?? coachId;
+}
+
 function syncMember(m: Member) {
   appendMemberLog({ data: {
-    timestamp: new Date().toISOString(),
-    name: m.name, cin: m.cin, phone: m.phone,
-    gender: m.gender, plan: m.plan, endDate: m.subEnd,
+    id: m.id, name: m.name, phone: m.phone, gender: m.gender,
+    coach: coachNameFor(m.coachId), subEnd: m.subEnd,
+    insuranceEnd: m.insuranceEnd ?? "",
   } }).then(() => setSyncError(null))
     .catch((err) => { setSyncError(String(err?.message ?? err)); console.warn("[sheets sync] member", err); });
 }
-function syncCash(entry: { memberName?: string; amount: number; kind: string }) {
-  appendCashLog({ data: {
-    timestamp: new Date().toISOString(),
+function syncCash(entry: { memberName?: string; amount: number; kind: string; planCode?: PlanCode }) {
+  const tx = entry.planCode === "1D" && (entry.kind === "registration" || entry.kind === "renewal")
+    ? "1D Pass"
+    : (KIND_TO_TX[entry.kind] ?? entry.kind);
+  appendFinancialLog({ data: {
+    date: new Date().toISOString(),
     memberName: entry.memberName ?? "—",
-    amount: entry.amount, kind: entry.kind,
+    transactionType: tx,
+    amount: entry.amount,
   } }).then(() => setSyncError(null))
     .catch((err) => { setSyncError(String(err?.message ?? err)); console.warn("[sheets sync] cash", err); });
+}
+function syncAttendance(personName: string, role: "Member" | "Coach") {
+  appendAttendanceLog({ data: {
+    dateTime: new Date().toISOString(),
+    personName, role,
+  } }).then(() => setSyncError(null))
+    .catch((err) => { setSyncError(String(err?.message ?? err)); console.warn("[sheets sync] attendance", err); });
 }
 
 // ---------------------------------------------------------------------------

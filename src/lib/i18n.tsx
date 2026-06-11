@@ -1,158 +1,158 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-export type Lang = "ar" | "en";
+export type Lang = "ar" | "fr"; // تغيير من en إلى fr
 
-type Dict = Record<string, { ar: string; en: string }>;
+type Dict = Record<string, { ar: string; fr: string }>; // تغيير من en إلى fr
 
 export const DICT = {
   // Sidebar / nav
-  "nav.dashboard":   { ar: "الرئيسية",       en: "Dashboard" },
-  "nav.members":     { ar: "الأعضاء",        en: "Members" },
-  "nav.reception":   { ar: "الاستقبال",      en: "Reception" },
-  "nav.onboard":     { ar: "تسجيل جديد",     en: "Onboard" },
-  "nav.coaches":     { ar: "المدربون",       en: "Coaches" },
-  "nav.staff":       { ar: "فريق العمل",     en: "Staff" },
+  "nav.dashboard":   { ar: "الرئيسية",       fr: "Tableau de bord" },
+  "nav.members":     { ar: "الأعضاء",        fr: "Membres" },
+  "nav.reception":   { ar: "الاستقبال",      fr: "Réception" },
+  "nav.onboard":     { ar: "تسجيل جديد",     fr: "Inscription" },
+  "nav.coaches":     { ar: "المدربون",       fr: "Coachs" },
+  "nav.staff":       { ar: "فريق العمل",     fr: "Équipe" },
 
   // Headings
-  "head.admin.title":     { ar: "نظرة على اليوم",                en: "Today's Overview" },
-  "head.admin.sub":       { ar: "الأعضاء النشطون، المداخيل والتجديدات.", en: "Active members, cash collected and renewals — at a glance." },
-  "head.members.title":   { ar: "الأعضاء",                       en: "Members" },
-  "head.members.sub":     { ar: "ابحث، جدّد، جمّد وتواصل مع الأعضاء.", en: "Search, renew, freeze and reach members." },
-  "head.reception.title": { ar: "مكتب الاستقبال",                en: "Reception Check-in Desk" },
-  "head.reception.sub":   { ar: "امسح رمز QR أو CIN للتحقق من الدخول.", en: "Scan QR or CIN to validate access." },
-  "head.onboard.title":   { ar: "عضو جديد",                      en: "New Member" },
-  "head.onboard.sub":     { ar: "سجّل عضوًا، استلم الكاش واطبع الإيصال.", en: "Register a member, take cash and print a receipt." },
-  "head.coaches.title":   { ar: "المدربون والمجموعات",           en: "Coaches & Groups" },
-  "head.coaches.sub":     { ar: "عزل تام بين مدربي الرجال والنساء لتفادي الأخطاء.", en: "Men's and Women's coaches — fully isolated to prevent human error." },
-  "head.staff.title":     { ar: "فريق العمل والصلاحيات",          en: "Staff & Access" },
-  "head.staff.sub":       { ar: "إدارة الحسابات والصلاحيات.",     en: "Manage who can sign in." },
+  "head.admin.title":     { ar: "نظرة على اليوم",                fr: "Aperçu du jour" },
+  "head.admin.sub":       { ar: "الأعضاء النشطون، المداخيل والتجديدات.", fr: "Membres actifs, revenus et renouvellements — en un coup d'œil." },
+  "head.members.title":   { ar: "الأعضاء",                       fr: "Membres" },
+  "head.members.sub":     { ar: "ابحث، جدّد، جمّد وتواصل مع الأعضاء.", fr: "Rechercher, renouveler, geler et contacter les membres." },
+  "head.reception.title": { ar: "مكتب الاستقبال",                fr: "Bureau de réception" },
+  "head.reception.sub":   { ar: "امسح رمز QR أو CIN للتحقق من الدخول.", fr: "Scannez le QR ou la CIN pour valider l'accès." },
+  "head.onboard.title":   { ar: "عضو جديد",                      fr: "Nouveau membre" },
+  "head.onboard.sub":     { ar: "سجّل عضوًا، استلم الكاش واطبع الإيصال.", fr: "Inscrire un membre, encaisser et imprimer un reçu." },
+  "head.coaches.title":   { ar: "المدربون والمجموعات",           fr: "Coachs & Groupes" },
+  "head.coaches.sub":     { ar: "عزل تام بين مدربي الرجال والنساء لتفادي الأخطاء.", fr: "Coachs hommes et femmes — totalement séparés pour éviter les erreurs." },
+  "head.staff.title":     { ar: "فريق العمل والصلاحيات",          fr: "Équipe & Accès" },
+  "head.staff.sub":       { ar: "إدارة الحسابات والصلاحيات.",     fr: "Gérer qui peut se connecter." },
 
   // Actions / buttons
-  "action.addCoach":      { ar: "إضافة مدرب",       en: "Add Coach" },
-  "action.assignMember":  { ar: "تعيين متدرب",      en: "Assign Member" },
-  "action.freeze":        { ar: "تجميد",            en: "Freeze" },
-  "action.unfreeze":      { ar: "إلغاء التجميد",    en: "Unfreeze" },
-  "action.renew":         { ar: "تجديد",            en: "Renew" },
-  "action.checkin":       { ar: "تسجيل الدخول",     en: "Check-in" },
-  "action.logCash":       { ar: "إدخال كاش",        en: "Log Cash" },
-  "action.validate":      { ar: "تحقق",             en: "Validate" },
-  "action.register":      { ar: "تسجيل",            en: "Register" },
-  "action.cancel":        { ar: "إلغاء",            en: "Cancel" },
+  "action.addCoach":      { ar: "إضافة مدرب",       fr: "Ajouter un coach" },
+  "action.assignMember":  { ar: "تعيين متدرب",      fr: "Assigner un membre" },
+  "action.freeze":        { ar: "تجميد",            fr: "Geler" },
+  "action.unfreeze":      { ar: "إلغاء التجميد",    fr: "Dégeler" },
+  "action.renew":         { ar: "تجديد",            fr: "Renouveler" },
+  "action.checkin":       { ar: "تسجيل الدخول",     fr: "Pointer (Check-in)" },
+  "action.logCash":       { ar: "إدخال كاش",        fr: "Saisir l'espèce" },
+  "action.validate":      { ar: "تحقق",             fr: "Valider" },
+  "action.register":      { ar: "تسجيل",            fr: "Inscrire" },
+  "action.cancel":        { ar: "إلغاء",            fr: "Annuler" },
 
   // Table headers
-  "table.member":         { ar: "العضو",            en: "Member" },
-  "table.cin":            { ar: "البطاقة الوطنية",   en: "CIN" },
-  "table.gender":         { ar: "الجنس",            en: "Gender" },
-  "table.daysLeft":       { ar: "الأيام المتبقية",  en: "Days Left" },
-  "table.status":         { ar: "الحالة",           en: "Status" },
-  "table.actions":        { ar: "إجراءات",          en: "Actions" },
-  "table.phone":          { ar: "الهاتف",           en: "Phone" },
+  "table.member":         { ar: "العضو",            fr: "Membre" },
+  "table.cin":            { ar: "البطاقة الوطنية",   fr: "CIN" },
+  "table.gender":         { ar: "الجنس",            fr: "Sexe" },
+  "table.daysLeft":       { ar: "الأيام المتبقية",  fr: "Jours restants" },
+  "table.status":         { ar: "الحالة",           fr: "Statut" },
+  "table.actions":        { ar: "إجراءات",          fr: "Actions" },
+  "table.phone":          { ar: "الهاتف",           fr: "Téléphone" },
 
   // Status labels
-  "status.active":        { ar: "نشط",              en: "Active" },
-  "status.expiring":      { ar: "قارب الانتهاء",    en: "Expiring Soon" },
-  "status.expired":       { ar: "منتهي",            en: "Expired" },
-  "status.frozen":        { ar: "مجمّد",            en: "Frozen" },
-  "status.paused":        { ar: "موقوف",            en: "paused" },
+  "status.active":        { ar: "نشط",              fr: "Actif" },
+  "status.expiring":      { ar: "قارب الانتهاء",    fr: "Expire bientôt" },
+  "status.expired":       { ar: "منتهي",            fr: "Expiré" },
+  "status.frozen":        { ar: "مجمّد",            fr: "Gelé" },
+  "status.paused":        { ar: "موقوف",            fr: "En pause" },
 
   // Filters
-  "filter.allStatuses":   { ar: "كل الحالات",       en: "All statuses" },
-  "filter.allGenders":    { ar: "كل الأجناس",       en: "All genders" },
-  "gender.male":          { ar: "ذكر",              en: "Male" },
-  "gender.female":        { ar: "أنثى",             en: "Female" },
-  "gender.men":           { ar: "رجال",             en: "Men" },
-  "gender.women":         { ar: "نساء",             en: "Women" },
+  "filter.allStatuses":   { ar: "كل الحالات",       fr: "Tous les statuts" },
+  "filter.allGenders":    { ar: "كل الأجناس",       fr: "Tous les sexes" },
+  "gender.male":          { ar: "ذكر",              fr: "Homme" },
+  "gender.female":        { ar: "أنثى",             fr: "Femme" },
+  "gender.men":           { ar: "رجال",             fr: "Hommes" },
+  "gender.women":         { ar: "نساء",             fr: "Femmes" },
 
   // Form fields
-  "form.fullName":        { ar: "الاسم الكامل",     en: "Full name" },
-  "form.phone":           { ar: "رقم الهاتف",       en: "Phone number" },
-  "form.gender":          { ar: "الجنس",            en: "Gender" },
-  "form.cin":             { ar: "رقم البطاقة الوطنية (CIN)", en: "CIN / National ID" },
-  "form.assignCoach":     { ar: "تعيين مدرب",       en: "Assign coach" },
-  "form.startDate":       { ar: "تاريخ البدء",      en: "Start date" },
-  "form.endDate":         { ar: "تاريخ الانتهاء",   en: "End date" },
-  "form.plan":            { ar: "الاشتراك",         en: "Plan" },
-  "form.cashAmount":      { ar: "المبلغ المدفوع (درهم)", en: "Cash amount paid (MAD)" },
-  "form.selectGender":    { ar: "اختر الجنس",       en: "Select" },
-  "form.none":            { ar: "— لا أحد —",       en: "— None —" },
-  "form.pickGenderFirst": { ar: "اختر الجنس أولًا",  en: "Pick gender first" },
-  "form.selectCoach":     { ar: "اختر مدربًا",      en: "Select a coach" },
-  "form.specialty":       { ar: "التخصص",           en: "Specialty" },
-  "form.targetAudience":  { ar: "الفئة المستهدفة",  en: "Target audience" },
-  "form.workingDays":     { ar: "أيام العمل",       en: "Working days" },
-  "form.startTime":       { ar: "وقت البدء",        en: "Start time" },
-  "form.endTime":         { ar: "وقت الانتهاء",     en: "End time" },
+  "form.fullName":        { ar: "الاسم الكامل",     fr: "Nom complet" },
+  "form.phone":           { ar: "رقم الهاتف",       fr: "Numéro de téléphone" },
+  "form.gender":          { ar: "الجنس",            fr: "Sexe" },
+  "form.cin":             { ar: "رقم البطاقة الوطنية (CIN)", fr: "CIN / Carte d'identité" },
+  "form.assignCoach":     { ar: "تعيين مدرب",       fr: "Assigner un coach" },
+  "form.startDate":       { ar: "تاريخ البدء",      fr: "Date de début" },
+  "form.endDate":         { ar: "تاريخ الانتهاء",   fr: "Date de fin" },
+  "form.plan":            { ar: "الاشتراك",         fr: "Abonnement" },
+  "form.cashAmount":      { ar: "المبلغ المدفوع (درهم)", fr: "Montant payé (MAD)" },
+  "form.selectGender":    { ar: "اختر الجنس",       fr: "Sélectionner" },
+  "form.none":            { ar: "— لا أحد —",       fr: "— Aucun —" },
+  "form.pickGenderFirst": { ar: "اختر الجنس أولًا",  fr: "Choisissez d'abord le sexe" },
+  "form.selectCoach":     { ar: "اختر مدربًا",      fr: "Sélectionnez un coach" },
+  "form.specialty":       { ar: "التخصص",           fr: "Spécialité" },
+  "form.targetAudience":  { ar: "الفئة المستهدفة",  fr: "Public cible" },
+  "form.workingDays":     { ar: "أيام العمل",       fr: "Jours de travail" },
+  "form.startTime":       { ar: "وقت البدء",        fr: "Heure de début" },
+  "form.endTime":         { ar: "وقت الانتهاء",     fr: "Heure de fin" },
 
-  // Onboard specific (New additions)
-  "onboard.identity":       { ar: "هوية العضو",                  en: "Member identity" },
-  "onboard.identitySub":    { ar: "البيانات الأساسية وأوقات الدخول.", en: "Core personal details and access schedule." },
-  "onboard.namePlaceholder":{ ar: "مثال: أحمد العلمي",             en: "e.g. Sofia Martin" },
-  "onboard.planCash":       { ar: "الاشتراك والصندوق",           en: "Plan & cash" },
-  "onboard.planCashSub":    { ar: "تاريخ الانتهاء يُحسب أوتوماتيكياً.", en: "End date auto-calculates from start + plan." },
-  "onboard.genderHelper":   { ar: "اختيار الجنس يحدد أوقات الدخول التلقائية.", en: "Selecting a gender assigns the weekly access schedule." },
-  "onboard.coachHelper":    { ar: "قائمة المدربين تُفلتر بناءً على الجنس المختار.", en: "Coach list filters automatically once a gender is selected." },
-  "onboard.picture":        { ar: "الصورة الشخصية (اختياري)",    en: "Profile picture (optional)" },
-  "onboard.upload":         { ar: "اسحب الصورة أو اضغط للرفع",    en: "Drop image or click to upload" },
-  "onboard.uploadSub":      { ar: "PNG · JPG · حتى 5 ميجابايت",  en: "PNG · JPG · up to 5MB" },
-  "onboard.cashRequired":   { ar: "إجباري. الأداء نقداً فقط.",    en: "Required. Cash-only gym — no card, no transfer." },
-  "onboard.ready":          { ar: "جاهز للتسجيل؟",                en: "Ready to register?" },
-  "onboard.readySub":       { ar: "تأكد من استلام المبلغ، ثم اضغط تسجيل.", en: "Fill all fields, confirm cash, then press Register." },
-  "onboard.registering":    { ar: "جاري التسجيل…",               en: "Registering…" },
+  // Onboard specific
+  "onboard.identity":       { ar: "هوية العضو",                  fr: "Identité du membre" },
+  "onboard.identitySub":    { ar: "البيانات الأساسية وأوقات الدخول.", fr: "Détails personnels et horaires d'accès." },
+  "onboard.namePlaceholder":{ ar: "مثال: أحمد العلمي",            fr: "ex: Ahmed El Alami" },
+  "onboard.planCash":       { ar: "الاشتراك والصندوق",           fr: "Abonnement & Caisse" },
+  "onboard.planCashSub":    { ar: "تاريخ الانتهاء يُحسب أوتوماتيكياً.", fr: "La date de fin se calcule automatiquement." },
+  "onboard.genderHelper":   { ar: "اختيار الجنس يحدد أوقات الدخول التلقائية.", fr: "Le choix du sexe attribue le planning d'accès." },
+  "onboard.coachHelper":    { ar: "قائمة المدربين تُفلتر بناءً على الجنس المختار.", fr: "La liste des coachs est filtrée automatiquement." },
+  "onboard.picture":        { ar: "الصورة الشخصية (اختياري)",    fr: "Photo de profil (optionnelle)" },
+  "onboard.upload":         { ar: "اسحب الصورة أو اضغط للرفع",    fr: "Glissez l'image ou cliquez pour importer" },
+  "onboard.uploadSub":      { ar: "PNG · JPG · حتى 5 ميجابايت",  fr: "PNG · JPG · jusqu'à 5MB" },
+  "onboard.cashRequired":   { ar: "إجباري. الأداء نقداً فقط.",    fr: "Obligatoire. Paiement en espèces uniquement." },
+  "onboard.ready":          { ar: "جاهز للتسجيل؟",                fr: "Prêt à inscrire ?" },
+  "onboard.readySub":       { ar: "تأكد من استلام المبلغ، ثم اضغط تسجيل.", fr: "Remplissez les champs, confirmez l'espèce, puis inscrivez." },
+  "onboard.registering":    { ar: "جاري التسجيل…",               fr: "Inscription en cours…" },
 
   // Metrics
-  "metric.activeToday":   { ar: "حاضرون اليوم",                en: "Active today" },
-  "metric.cashToday":     { ar: "مداخيل اليوم — درهم",          en: "Cash collected today" },
-  "metric.expiringWeek":  { ar: "ينتهي هذا الأسبوع",           en: "Expiring this week" },
-  "metric.cashFlow":      { ar: "تدفّق النقد اليوم",            en: "Today's cash flow" },
+  "metric.activeToday":   { ar: "حاضرون اليوم",                fr: "Actifs aujourd'hui" },
+  "metric.cashToday":     { ar: "مداخيل اليوم — درهم",          fr: "Espèces encaissées — MAD" },
+  "metric.expiringWeek":  { ar: "ينتهي هذا الأسبوع",           fr: "Expire cette semaine" },
+  "metric.cashFlow":      { ar: "تدفّق النقد اليوم",            fr: "Flux de trésorerie du jour" },
 
   // Reception
-  "reception.scannerTitle":   { ar: "امسح QR أو أدخل CIN / رقم العضو", en: "Scan QR or enter CIN / ID" },
-  "reception.scannerLabel":   { ar: "ماسح الاستقبال",                en: "Reception scanner" },
+  "reception.scannerTitle":   { ar: "امسح QR أو أدخل CIN / رقم العضو", fr: "Scannez le QR ou entrez CIN / ID" },
+  "reception.scannerLabel":   { ar: "ماسح الاستقبال",                fr: "Scanner de réception" },
 
   // Admin
-  "admin.expiringSoon":       { ar: "قارب اشتراكهم على الانتهاء",      en: "Expiring Soon" },
-  "admin.cashNote":           { ar: "كل الأداءات نقداً · توقيت إفريقيا/الدار البيضاء", en: "All payments are cash · Africa/Casablanca" },
-  "admin.noRenewals":         { ar: "لا توجد تجديدات هذا الأسبوع",     en: "No renewals due this week" },
-  "admin.dueIn7":             { ar: "أعضاء يستوجبون التجديد خلال أقل من 7 أيام", en: "Members due to renew in < 7 days" },
+  "admin.expiringSoon":       { ar: "قارب اشتراكهم على الانتهاء",      fr: "Expire bientôt" },
+  "admin.cashNote":           { ar: "كل الأداءات نقداً · توقيت إفريقيا/الدار البيضاء", fr: "Tous les paiements sont en espèces · Afrique/Casablanca" },
+  "admin.noRenewals":         { ar: "لا توجد تجديدات هذا الأسبوع",    fr: "Aucun renouvellement cette semaine" },
+  "admin.dueIn7":             { ar: "أعضاء يستوجبون التجديد خلال أقل من 7 أيام", fr: "Membres à renouveler dans < 7 jours" },
 
   // Shift
-  "shift.men":            { ar: "الدوام الحالي: رجال",          en: "Active Shift: Men" },
-  "shift.women":          { ar: "الدوام الحالي: نساء",          en: "Active Shift: Women" },
-  "shift.closed":         { ar: "انتقال / مغلق",                en: "Transition / Closed" },
+  "shift.men":            { ar: "الدوام الحالي: رجال",          fr: "Service actuel : Hommes" },
+  "shift.women":          { ar: "الدوام الحالي: نساء",          fr: "Service actuel : Femmes" },
+  "shift.closed":         { ar: "انتقال / مغلق",                fr: "Transition / Fermé" },
 
   // Auth
-  "auth.logout":          { ar: "تسجيل الخروج",                 en: "Logout" },
-  "role.owner":           { ar: "المالك",                       en: "owner" },
-  "role.receptionist":    { ar: "موظف الاستقبال",               en: "receptionist" },
+  "auth.logout":          { ar: "تسجيل الخروج",                fr: "Se déconnecter" },
+  "role.owner":           { ar: "المالك",                      fr: "Propriétaire" },
+  "role.receptionist":    { ar: "موظف الاستقبال",              fr: "Réceptionniste" },
 
   // Misc
-  "search.members":       { ar: "ابحث عن عضو…",                en: "Search members…" },
-  "search.byNameCinId":   { ar: "ابحث بالاسم أو CIN أو رقم العضو…", en: "Search by name, CIN, or ID…" },
-  "common.notify":        { ar: "الإشعارات",                    en: "Notifications" },
-  "common.days":          { ar: "أيام",                       en: "days" },
-  "common.currency":      { ar: "درهم",                       en: "MAD" },
-  "common.of":            { ar: "من",                         en: "of" },
-  "sync.active":          { ar: "مزامنة السحابة: نشطة",         en: "Live Sync: Active" },
-  "sync.error":           { ar: "مزامنة السحابة: خطأ",          en: "Live Sync: Error" },
+  "search.members":       { ar: "ابحث عن عضو…",                fr: "Rechercher des membres…" },
+  "search.byNameCinId":   { ar: "ابحث بالاسم أو CIN أو رقم العضو…", fr: "Recherche par nom, CIN ou ID…" },
+  "common.notify":        { ar: "الإشعارات",                  fr: "Notifications" },
+  "common.days":          { ar: "أيام",                      fr: "jours" },
+  "common.currency":      { ar: "درهم",                      fr: "MAD" },
+  "common.of":            { ar: "من",                        fr: "sur" },
+  "sync.active":          { ar: "مزامنة السحابة: نشطة",         fr: "Synchro Cloud : Active" },
+  "sync.error":           { ar: "مزامنة السحابة: خطأ",          fr: "Synchro Cloud : Erreur" },
 
   // Coaches View
-  "coach.menOnly":          { ar: "للرجال فقط", en: "Men Only" },
-  "coach.womenOnly":        { ar: "للنساء فقط", en: "Women Only" },
-  "coach.assignedMembers":  { ar: "الأعضاء المعينون", en: "Assigned members" },
-  "coach.autoOpened":       { ar: "مجموعة اليوم (تلقائي)", en: "Auto-opened today's group" },
-  "coach.add":              { ar: "إضافة مدرب", en: "Add Coach" },
+  "coach.menOnly":          { ar: "للرجال فقط", fr: "Hommes Uniquement" },
+  "coach.womenOnly":        { ar: "للنساء فقط", fr: "Femmes Uniquement" },
+  "coach.assignedMembers":  { ar: "الأعضاء المعينون", fr: "Membres assignés" },
+  "coach.autoOpened":       { ar: "مجموعة اليوم (تلقائي)", fr: "Groupe du jour (auto)" },
+  "coach.add":              { ar: "إضافة مدرب", fr: "Ajouter un coach" },
   
   // Member Details / Operational View
-  "member.daysLeft":        { ar: "أيام متبقية", en: "days left" },
-  "member.status":          { ar: "الحالة", en: "Status" },
-  "member.assign":          { ar: "تعيين عضو موجود", en: "Assign Existing Member" },
-  "member.roster":          { ar: "قائمة اليوم", en: "Today's Roster" },
-  "member.operationalView": { ar: "نظرة تشغيلية فقط - لا توجد بيانات مالية.", en: "Operational view only — no financial data." },
+  "member.daysLeft":        { ar: "أيام متبقية", fr: "jours restants" },
+  "member.status":          { ar: "الحالة", fr: "Statut" },
+  "member.assign":          { ar: "تعيين عضو موجود", fr: "Assigner un membre existant" },
+  "member.roster":          { ar: "قائمة اليوم", fr: "Liste du jour" },
+  "member.operationalView": { ar: "نظرة تشغيلية فقط - لا توجد بيانات مالية.", fr: "Vue opérationnelle uniquement — aucune donnée financière." },
   
   // Actions
-  "action.remind":          { ar: "تذكير", en: "Remind" },
-  "action.print":           { ar: "طباعة", en: "Print" },
-  "action.whatsapp":        { ar: "واتساب", en: "WhatsApp" },
+  "action.remind":          { ar: "تذكير", fr: "Rappeler" },
+  "action.print":           { ar: "طباعة", fr: "Imprimer" },
+  "action.whatsapp":        { ar: "واتساب", fr: "WhatsApp" },
 } as const satisfies Dict;
 
 export type DictKey = keyof typeof DICT;
@@ -177,6 +177,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return (localStorage.getItem(STORAGE) as Lang) || "ar";
   });
 
+  // Arabic is RTL, French is LTR
   const dir: "rtl" | "ltr" = lang === "ar" ? "rtl" : "ltr";
 
   useEffect(() => {
@@ -187,7 +188,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [lang, dir]);
 
   const setLang = useCallback((l: Lang) => setLangState(l), []);
-  const toggle = useCallback(() => setLangState((p) => (p === "ar" ? "en" : "ar")), []);
+  
+  // التبديل بين العربية والفرنسية
+  const toggle = useCallback(() => setLangState((p) => (p === "ar" ? "fr" : "ar")), []);
   const t = useCallback((k: DictKey) => DICT[k]?.[lang] ?? k, [lang]);
 
   const value = useMemo<I18nCtxValue>(

@@ -118,7 +118,7 @@ function Workspace() {
             >
               <span className={cn(lang === "ar" ? "text-primary" : "text-muted-foreground")}>AR</span>
               <span className="text-muted-foreground">/</span>
-              <span className={cn(lang === "en" ? "text-primary" : "text-muted-foreground")}>EN</span>
+              <span className={cn(lang === "fr" ? "text-primary" : "text-muted-foreground")}>FR</span>
             </button>
 
             <Button size="icon" variant="ghost" className="hover:bg-accent" aria-label={t("common.notify")}>

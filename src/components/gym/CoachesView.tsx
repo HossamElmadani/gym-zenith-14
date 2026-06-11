@@ -32,15 +32,14 @@ const audienceTheme = {
   women: { ring: "ring-rose-500/40", border: "border-rose-500/40", bg: "bg-rose-500/10", text: "text-rose-300", chip: "bg-rose-500/15 text-rose-300 border-rose-500/30", dot: "bg-rose-500" },
 } as const;
 
-// --- أضف هذا الكود هنا ---
+// الأيام بالعربية والفرنسية
 const AR_DAYS: Record<number, string> = { 0: "الأحد", 1: "الإثنين", 2: "الثلاثاء", 3: "الأربعاء", 4: "الخميس", 5: "الجمعة", 6: "السبت" };
-const EN_DAYS: Record<number, string> = { 0: "Sun", 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat" };
+const FR_DAYS: Record<number, string> = { 0: "Dim", 1: "Lun", 2: "Mar", 3: "Mer", 4: "Jeu", 5: "Ven", 6: "Sam" };
 
 function formatLocalSchedule(c: Coach, lang: string) {
-  const days = c.workingDays.map(d => lang === "ar" ? AR_DAYS[d] : EN_DAYS[d]).join(" · ");
+  const days = c.workingDays.map(d => lang === "ar" ? AR_DAYS[d] : FR_DAYS[d]).join(" · ");
   return `${days} · ${c.startTime}-${c.endTime}`;
 }
-// -----------------------
 
 export function CoachesView() {
   const { t, lang, dir } = useI18n();
@@ -62,13 +61,13 @@ export function CoachesView() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <TabsList className="glass border border-border/60 bg-card/40 p-1 h-auto">
             <TabsTrigger value="men" className="gap-2 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-200">
-              <span className="size-2 rounded-full bg-blue-500" /> {lang === "ar" ? "مدربو الرجال" : "Men's Coaches"}
+              <span className="size-2 rounded-full bg-blue-500" /> {lang === "ar" ? "مدربو الرجال" : "Coachs Hommes"}
               <Badge variant="secondary" className="bg-blue-500/15 text-blue-200 border-blue-500/30 mx-1">
                 {coaches.filter((c) => c.audience === "men").length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="women" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-200">
-              <span className="size-2 rounded-full bg-rose-500" /> {lang === "ar" ? "مدربات النساء" : "Women's Coaches"}
+              <span className="size-2 rounded-full bg-rose-500" /> {lang === "ar" ? "مدربات النساء" : "Coachs Femmes"}
               <Badge variant="secondary" className="bg-rose-500/15 text-rose-200 border-rose-500/30 mx-1">
                 {coaches.filter((c) => c.audience === "women").length}
               </Badge>
@@ -105,9 +104,9 @@ function CoachGrid({ coaches, onSelect }: { coaches: Coach[]; onSelect: (c: Coac
     return (
       <Card className="glass rounded-2xl">
         <CardContent className="py-14 text-center text-muted-foreground text-sm">
-          {lang === "ar" ? "لا يوجد مدربون بعد. استخدم " : "No coaches yet. Use "}
+          {lang === "ar" ? "لا يوجد مدربون بعد. استخدم " : "Aucun coach. Utilisez "}
           <span className="text-foreground font-medium">+ {t("action.addCoach")}</span> 
-          {lang === "ar" ? " لإنشاء واحد." : " to create one."}
+          {lang === "ar" ? " لإنشاء واحد." : " pour en ajouter un."}
         </CardContent>
       </Card>
     );
@@ -185,16 +184,16 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
   };
 
   const submit = () => {
-    if (!name.trim() || !specialty.trim()) { toast.error(lang === "ar" ? "اسم المدرب والتخصص مطلوبان" : "Coach name and specialty are required"); return; }
-    if (days.length === 0) { toast.error(lang === "ar" ? "اختر يوم عمل واحد على الأقل" : "Pick at least one working day"); return; }
-    if (endTime <= startTime) { toast.error(lang === "ar" ? "وقت الانتهاء يجب أن يكون بعد وقت البدء" : "End time must be after start time"); return; }
+    if (!name.trim() || !specialty.trim()) { toast.error(lang === "ar" ? "اسم المدرب والتخصص مطلوبان" : "Le nom et la spécialité du coach sont requis"); return; }
+    if (days.length === 0) { toast.error(lang === "ar" ? "اختر يوم عمل واحد على الأقل" : "Choisissez au moins un jour de travail"); return; }
+    if (endTime <= startTime) { toast.error(lang === "ar" ? "وقت الانتهاء يجب أن يكون بعد وقت البدء" : "L'heure de fin doit être après l'heure de début"); return; }
     
     const c = coachStore.add({
       name: name.trim(), specialty: specialty.trim(), audience,
       workingDays: days.sort((a, b) => a - b), startTime, endTime,
     });
     
-    toast.success(lang === "ar" ? `تمت إضافة المدرب · ${c.name}` : `Coach added · ${c.name}`, {
+    toast.success(lang === "ar" ? `تمت إضافة المدرب · ${c.name}` : `Coach ajouté · ${c.name}`, {
       description: `${audience === "men" ? t("coach.menOnly") : t("coach.womenOnly")} · ${formatSchedule(c)}`,
     });
     reset();
@@ -210,18 +209,18 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
         <DialogHeader>
           <DialogTitle>{t("action.addCoach")}</DialogTitle>
           <DialogDescription>
-            {lang === "ar" ? "المدربون مرتبطون بشكل دائم بجمهور واحد ويمكنهم العمل فقط في أيام هذا الجمهور." : "Coaches are permanently tied to one audience and can only work on that group's shift days."}
+            {lang === "ar" ? "المدربون مرتبطون بشكل دائم بجمهور واحد ويمكنهم العمل فقط في أيام هذا الجمهور." : "Les coachs sont liés en permanence à un public et ne peuvent travailler que les jours assignés à ce groupe."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label>{lang === "ar" ? "اسم المدرب" : "Coach name"}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={lang === "ar" ? "مثال: يونس العمراني" : "e.g. Salma Idrissi"} className="bg-background/50" />
+            <Label>{lang === "ar" ? "اسم المدرب" : "Nom du coach"}</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={lang === "ar" ? "مثال: يونس العمراني" : "ex: Salma Idrissi"} className="bg-background/50" />
           </div>
           <div className="space-y-1.5">
             <Label>{t("form.specialty")}</Label>
-            <Input value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder={lang === "ar" ? "مثال: كمال الأجسام، كارديو" : "e.g. Aerobics, Bodybuilding"} className="bg-background/50" />
+            <Input value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder={lang === "ar" ? "مثال: كمال الأجسام، كارديو" : "ex: Musculation, Cardio"} className="bg-background/50" />
           </div>
 
           <div className="space-y-1.5">
@@ -239,7 +238,7 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
               </label>
             </RadioGroup>
             <p className="text-[11px] text-muted-foreground">
-              {lang === "ar" ? "بمجرد التحديد، لا يمكن تغيير هذا — فهو يحدد الأيام والأعضاء المتاحين." : "Once set, this cannot be changed — it gates which days and members are available."}
+              {lang === "ar" ? "بمجرد التحديد، لا يمكن تغيير هذا — فهو يحدد الأيام والأعضاء المتاحين." : "Une fois défini, cela ne peut être modifié — cela détermine les jours et les membres disponibles."}
             </p>
           </div>
 
@@ -255,7 +254,7 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
                     key={w.idx}
                     onClick={() => toggleDay(w.idx)}
                     disabled={!allowed}
-                    title={allowed ? w.long : `${w.long} is reserved for the other group`}
+                    title={allowed ? w.long : `${w.long} est réservé à l'autre groupe`}
                     className={cn(
                       "h-12 rounded-lg border text-[11px] font-medium flex flex-col items-center justify-center gap-0.5 transition-all",
                       allowed && selected && audience === "men"   && "border-blue-500/60 bg-blue-500/15 text-blue-200",
@@ -264,7 +263,7 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
                       !allowed && "border-dashed border-border/40 bg-muted/20 text-muted-foreground/40 cursor-not-allowed line-through",
                     )}
                   >
-                    {w.short}
+                    {lang === "ar" ? AR_DAYS[w.idx].substring(0, 3) : FR_DAYS[w.idx]}
                     {selected && allowed && <Check className="size-3" />}
                   </button>
                 );
@@ -272,8 +271,8 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
             </div>
             <p className="text-[11px] text-muted-foreground">
               {audience === "men"
-                ? (lang === "ar" ? "أيام الرجال: الثلاثاء، الخميس، السبت. الأيام الأخرى مقفلة." : "Men's shifts: Tue, Thu, Sat. Other days are locked.")
-                : (lang === "ar" ? "أيام النساء: الإثنين، الأربعاء، الجمعة. الأيام الأخرى مقفلة." : "Women's shifts: Mon, Wed, Fri. Other days are locked.")}
+                ? (lang === "ar" ? "أيام الرجال: الثلاثاء، الخميس، السبت. الأيام الأخرى مقفلة." : "Créneaux hommes: Mar, Jeu, Sam. Les autres jours sont bloqués.")
+                : (lang === "ar" ? "أيام النساء: الإثنين، الأربعاء، الجمعة. الأيام الأخرى مقفلة." : "Créneaux femmes: Lun, Mer, Ven. Les autres jours sont bloqués.")}
             </p>
           </div>
 
@@ -334,25 +333,25 @@ function CoachDetailSheet({ coach, onClose, activeCoaches }: { coach: Coach | nu
           </div>
           <div className="rounded-xl border border-border/40 bg-card/40 p-3 flex items-center gap-2 text-sm">
             <CalendarDays className={cn("size-4", theme.text)} />
-            <span className="text-muted-foreground">{lang === "ar" ? "الجدول:" : "Schedule:"}</span>
+            <span className="text-muted-foreground">{lang === "ar" ? "الجدول:" : "Planning:"}</span>
             <span className="font-medium"><bdi>{formatLocalSchedule(coach, lang)}</bdi></span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-xl border border-border/40 bg-card/40 p-3">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "تاريخ الالتحاق" : "Joined"}</div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "تاريخ الالتحاق" : "A rejoint"}</div>
               <div className="text-sm font-medium mt-0.5"><bdi dir="ltr">{tzFormatDate(coach.joinedAt)}</bdi></div>
             </div>
             <div className="rounded-xl border border-border/40 bg-card/40 p-3">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "الدورة الحالية" : "Current Cycle"}</div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "الدورة الحالية" : "Cycle actuel"}</div>
               <div className="text-xs font-medium mt-0.5"><bdi dir="ltr">{tzFormatDate(cycle.start)} → {tzFormatDate(cycle.end)}</bdi></div>
             </div>
             <div className="rounded-xl border border-border/40 bg-card/40 p-3 col-span-2 flex items-center justify-between">
               <div>
-                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "الأعضاء النشطون في الدورة" : "Active members this cycle"}</div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "الأعضاء النشطون في الدورة" : "Membres actifs (ce cycle)"}</div>
                 <div className={cn("text-lg font-semibold", theme.text)}><bdi dir="ltr">{activeInCycle}</bdi></div>
               </div>
               <Button variant="outline" size="sm" className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setArchiveOpen(true)}>
-                <Archive className="size-3.5" /> {lang === "ar" ? "أرشفة المدرب" : "Archive Coach"}
+                <Archive className="size-3.5" /> {lang === "ar" ? "أرشفة المدرب" : "Archiver le coach"}
               </Button>
             </div>
           </div>
@@ -372,7 +371,7 @@ function CoachDetailSheet({ coach, onClose, activeCoaches }: { coach: Coach | nu
           <Tabs defaultValue="all" dir={lang === "ar" ? "rtl" : "ltr"}>
             <TabsList className="glass border border-border/60 bg-card/40 p-1 h-auto w-full grid grid-cols-2">
               <TabsTrigger value="all" className="gap-1.5">
-                {lang === "ar" ? "الكل" : "All Assigned"}
+                {lang === "ar" ? "الكل" : "Tous les assignés"}
                 <Badge variant="secondary" className="bg-accent/40 text-[10px]">{members.length}</Badge>
               </TabsTrigger>
               <TabsTrigger value="today" className="gap-1.5">
@@ -392,7 +391,7 @@ function CoachDetailSheet({ coach, onClose, activeCoaches }: { coach: Coach | nu
                   <CardContent className="py-10 text-center text-sm text-muted-foreground">
                     {lang === "ar" 
                       ? `${coach.name} ليس لديه دوام اليوم. هذا اليوم مخصص للمجموعة الأخرى أو يوم راحة.` 
-                      : `${coach.name} is not scheduled today. Today is reserved for the other group or off-day.`}
+                      : `${coach.name} n'est pas prévu aujourd'hui. Ce jour est réservé à l'autre groupe ou c'est un jour de repos.`}
                   </CardContent>
                 </Card>
               ) : (
@@ -437,16 +436,16 @@ function ArchiveCoachDialog({
 
   const submit = () => {
     if (hasMembers && !replacement) {
-      toast.error(lang === "ar" ? "اختر مدرباً بديلاً" : "Pick a replacement coach");
+      toast.error(lang === "ar" ? "اختر مدرباً بديلاً" : "Choisissez un coach remplaçant");
       return;
     }
     if (hasMembers) {
       assignedMembers.forEach((m) => gymStore.assignCoach(m.id, replacement));
     }
     coachStore.archive(coach.id);
-    toast.success(lang === "ar" ? `تمت أرشفة ${coach.name}` : `${coach.name} archived`, {
+    toast.success(lang === "ar" ? `تمت أرشفة ${coach.name}` : `${coach.name} archivé`, {
       description: hasMembers
-        ? (lang === "ar" ? `تم تحويل ${assignedMembers.length} عضو` : `Handed over ${assignedMembers.length} member${assignedMembers.length === 1 ? "" : "s"}`)
+        ? (lang === "ar" ? `تم تحويل ${assignedMembers.length} عضو` : `Transfert de ${assignedMembers.length} membre(s)`)
         : undefined,
     });
     setReplacement("");
@@ -459,25 +458,25 @@ function ArchiveCoachDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShieldAlert className="size-4 text-destructive" />
-            {lang === "ar" ? "أرشفة المدرب" : "Archive Coach"}
+            {lang === "ar" ? "أرشفة المدرب" : "Archiver le coach"}
           </DialogTitle>
           <DialogDescription>
             {hasMembers
               ? (lang === "ar"
                   ? `لدى هذا المدرب ${assignedMembers.length} عضو معيّن. اختر مدرباً بديلاً لتسليم هؤلاء الأعضاء.`
-                  : `This coach has ${assignedMembers.length} assigned member${assignedMembers.length === 1 ? "" : "s"}. Please select a replacement coach to handover these members.`)
-              : (lang === "ar" ? "لا يوجد أعضاء معيّنون. سيتم الأرشفة مباشرة." : "No assigned members. Archive will proceed directly.")}
+                  : `Ce coach a ${assignedMembers.length} membre(s) assigné(s). Veuillez sélectionner un coach remplaçant pour transférer ces membres.`)
+              : (lang === "ar" ? "لا يوجد أعضاء معيّنون. سيتم الأرشفة مباشرة." : "Aucun membre assigné. L'archivage sera direct.")}
           </DialogDescription>
         </DialogHeader>
 
         {hasMembers && (
           <div className="space-y-2">
-            <Label>{lang === "ar" ? "المدرب البديل" : "Replacement coach"}</Label>
+            <Label>{lang === "ar" ? "المدرب البديل" : "Coach remplaçant"}</Label>
             {replacementOptions.length === 0 ? (
               <div className="text-xs text-destructive rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
                 {lang === "ar"
                   ? "لا يوجد مدرب نشط آخر بنفس الجمهور. أضف مدرباً أولاً."
-                  : "No other active coach with the same audience. Add one first."}
+                  : "Aucun autre coach actif pour ce public. Ajoutez-en un d'abord."}
               </div>
             ) : (
               <select
@@ -485,7 +484,7 @@ function ArchiveCoachDialog({
                 onChange={(e) => setReplacement(e.target.value)}
                 className="w-full h-10 rounded-md border border-input bg-background/50 px-3 text-sm"
               >
-                <option value="">{lang === "ar" ? "اختر مدرباً…" : "Select a coach…"}</option>
+                <option value="">{lang === "ar" ? "اختر مدرباً…" : "Sélectionnez un coach…"}</option>
                 {replacementOptions.map((c) => (
                   <option key={c.id} value={c.id}>{c.name} · {c.specialty}</option>
                 ))}
@@ -501,7 +500,7 @@ function ArchiveCoachDialog({
             onClick={submit}
             disabled={hasMembers && replacementOptions.length === 0}
           >
-            <Archive className="size-3.5" /> {lang === "ar" ? "أرشفة وتسليم" : "Archive & Handover"}
+            <Archive className="size-3.5" /> {lang === "ar" ? "أرشفة وتسليم" : "Archiver et transférer"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -515,7 +514,7 @@ function buildReminder(member: Member, coach: Coach, lang: string) {
   if (lang === "ar") {
     return `سلام ${first}، تذكير سريع بأن حصتك مع الكوتش ${coach.name} ستكون اليوم على الساعة ${coach.startTime}. نراك هناك! 💪`;
   }
-  return `Salam ${first}, a quick reminder that your session with Coach ${coach.name} is today at ${coach.startTime}. See you there! 💪`;
+  return `Salam ${first}, petit rappel que votre séance avec le Coach ${coach.name} est aujourd'hui à ${coach.startTime}. À toute à l'heure ! 💪`;
 }
 
 function AssignedMembersTable({ members, coach, mode }: { members: Member[]; coach: Coach; mode: "all" | "today" }) {
@@ -527,11 +526,11 @@ function AssignedMembersTable({ members, coach, mode }: { members: Member[]; coa
     const text = members.map((m) => m.phone).join(", ");
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(lang === "ar" ? `تم نسخ ${members.length} رقم` : `Copied ${members.length} numbers`, {
-        description: lang === "ar" ? "ألصق الأرقام في قائمة رسائل واتساب الخاصة بك." : "Paste into your WhatsApp broadcast list.",
+      toast.success(lang === "ar" ? `تم نسخ ${members.length} رقم` : `${members.length} numéros copiés`, {
+        description: lang === "ar" ? "ألصق الأرقام في قائمة رسائل واتساب الخاصة بك." : "Collez les numéros dans votre liste de diffusion WhatsApp.",
       });
     } catch {
-      toast.error(lang === "ar" ? "لا يمكن الوصول للحافظة" : "Couldn't access clipboard");
+      toast.error(lang === "ar" ? "لا يمكن الوصول للحافظة" : "Impossible d'accéder au presse-papiers");
     }
   };
 
@@ -540,8 +539,8 @@ function AssignedMembersTable({ members, coach, mode }: { members: Member[]; coa
       <Card className="glass rounded-xl">
         <CardContent className="py-10 text-center text-sm text-muted-foreground">
           {mode === "today"
-            ? (lang === "ar" ? "لا يوجد أعضاء في قائمة اليوم." : "No members on today's roster yet.")
-            : (lang === "ar" ? "لا يوجد أعضاء معينون بعد. استخدم زر 'تعيين عضو موجود' بالأعلى." : "No members assigned yet. Use “Assign Existing Member” above.")}
+            ? (lang === "ar" ? "لا يوجد أعضاء في قائمة اليوم." : "Aucun membre prévu pour aujourd'hui.")
+            : (lang === "ar" ? "لا يوجد أعضاء معينون بعد. استخدم زر 'تعيين عضو موجود' بالأعلى." : "Aucun membre assigné. Utilisez 'Assigner un membre existant' ci-dessus.")}
         </CardContent>
       </Card>
     );
@@ -552,11 +551,11 @@ function AssignedMembersTable({ members, coach, mode }: { members: Member[]; coa
       {mode === "today" && (
         <div className="flex items-center justify-between px-1">
           <span className="text-[11px] text-muted-foreground">
-            {lang === "ar" ? "حصة اليوم على الساعة " : "Session today at "} 
+            {lang === "ar" ? "حصة اليوم على الساعة " : "Séance aujourd'hui à "} 
             <span className={cn("font-medium", theme.text)}>{coach.startTime}</span>
           </span>
           <Button size="sm" variant="outline" className="h-7 gap-1.5 text-[11px]" onClick={copyAll}>
-            <Copy className="size-3" /> {lang === "ar" ? "نسخ جميع الأرقام" : "Copy All Numbers"}
+            <Copy className="size-3" /> {lang === "ar" ? "نسخ جميع الأرقام" : "Copier les numéros"}
           </Button>
         </div>
       )}
@@ -580,7 +579,7 @@ function AssignedMembersTable({ members, coach, mode }: { members: Member[]; coa
                 ? buildReminder(m, coach, lang)
                 : (lang === "ar" 
                     ? `سلام ${m.name.split(" ")[0]}، معك نادي PULSE — الكوتش ${coach.name} في انتظارك. نراك في الحصة القادمة 💪`
-                    : `Salam ${m.name.split(" ")[0]}, this is PULSE — your coach ${coach.name} is here for you. See you at the next session 💪`);
+                    : `Salam ${m.name.split(" ")[0]}, ici PULSE — votre coach ${coach.name} vous attend. À la prochaine séance 💪`);
               
               const href = buildWaLink(m.phone, message);
               
@@ -618,7 +617,7 @@ function AssignedMembersTable({ members, coach, mode }: { members: Member[]; coa
                       asChild
                       size="sm"
                       className="gap-1.5 h-7 bg-[#25D366] hover:bg-[#1ebe5d] text-black text-[11px] font-medium shadow-[0_6px_20px_-6px_rgba(37,211,102,0.55)]"
-                      onClick={() => toast.success(lang === "ar" ? "تم فتح واتساب" : "WhatsApp opened")}
+                      onClick={() => toast.success(lang === "ar" ? "تم فتح واتساب" : "WhatsApp ouvert")}
                     >
                       <a href={href} target="_blank" rel="noreferrer" aria-label={`WhatsApp ${m.name}`}>
                         <svg viewBox="0 0 24 24" className="size-3.5" fill="currentColor" aria-hidden>
@@ -657,9 +656,9 @@ function AssignMemberDialog({ open, onClose, coach }: { open: boolean; onClose: 
   const chosen = eligible.find((m) => m.id === selected) ?? null;
 
   const submit = () => {
-    if (!chosen) { toast.error(lang === "ar" ? "اختر عضواً أولاً" : "Pick a member first"); return; }
+    if (!chosen) { toast.error(lang === "ar" ? "اختر عضواً أولاً" : "Choisissez un membre d'abord"); return; }
     gymStore.assignCoach(chosen.id, coach.id);
-    toast.success(lang === "ar" ? `تم تعيين ${chosen.name} للمدرب ${coach.name}` : `${chosen.name} assigned to ${coach.name}`);
+    toast.success(lang === "ar" ? `تم تعيين ${chosen.name} للمدرب ${coach.name}` : `${chosen.name} assigné(e) à ${coach.name}`);
     setSelected(null);
     onClose();
   };
@@ -672,7 +671,7 @@ function AssignMemberDialog({ open, onClose, coach }: { open: boolean; onClose: 
           <DialogDescription>
             {lang === "ar" 
               ? `يتم عرض الأعضاء النشطين من فئة (${coach.audience === "men" ? "الذكور" : "الإناث"}) فقط — تم تطبيق العزل التام.` 
-              : `Only active ${coach.audience === "men" ? "male" : "female"} members are shown — gender isolation is enforced.`}
+              : `Seuls les membres ${coach.audience === "men" ? "hommes" : "femmes"} actifs sont affichés — la séparation des sexes est appliquée.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -697,7 +696,7 @@ function AssignMemberDialog({ open, onClose, coach }: { open: boolean; onClose: 
               <Command>
                 <CommandInput placeholder={t("search.members")} />
                 <CommandList>
-                  <CommandEmpty>{lang === "ar" ? "لا يوجد أعضاء متاحين." : "No eligible members."}</CommandEmpty>
+                  <CommandEmpty>{lang === "ar" ? "لا يوجد أعضاء متاحين." : "Aucun membre éligible."}</CommandEmpty>
                   <CommandGroup>
                     {eligible.map((m) => (
                       <CommandItem
@@ -720,13 +719,13 @@ function AssignMemberDialog({ open, onClose, coach }: { open: boolean; onClose: 
             </PopoverContent>
           </Popover>
           <p className="text-[11px] text-muted-foreground">
-            {eligible.length} {lang === "ar" ? "عضو متاح للتعيين" : `eligible member${eligible.length === 1 ? "" : "s"}`}.
+            {eligible.length} {lang === "ar" ? "عضو متاح للتعيين" : `membre(s) éligible(s)`}.
           </p>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>{t("action.cancel")}</Button>
-          <Button onClick={submit} disabled={!chosen}>{lang === "ar" ? "تعيين للمدرب" : "Assign to coach"}</Button>
+          <Button onClick={submit} disabled={!chosen}>{lang === "ar" ? "تعيين للمدرب" : "Assigner au coach"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

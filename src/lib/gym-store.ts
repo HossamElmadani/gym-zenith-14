@@ -39,27 +39,31 @@ function coachNameFor(coachId?: string | null): string {
 
 function syncMember(m: Member) {
   appendMemberLog({ data: {
-    id: m.id, name: m.name, phone: m.phone, gender: m.gender,
+    id: m.id, name: m.name, phone: m.phone, gender: m.gender === "male" ? "Homme" : "Femme",
     coach: coachNameFor(m.coachId), subEnd: m.subEnd,
     insuranceEnd: m.insuranceEnd ?? "",
   } }).then(() => setSyncError(null))
     .catch((err) => { setSyncError(String(err?.message ?? err)); console.warn("[sheets sync] member", err); });
 }
-function syncCash(entry: { memberName?: string; amount: number; kind: string; planCode?: PlanCode }) {
+
+function syncCash(entry: { memberId?: string; memberName?: string; amount: number; kind: string; planCode?: PlanCode }) {
   const tx = entry.planCode === "1D" && (entry.kind === "registration" || entry.kind === "renewal")
     ? "1D Pass"
     : (KIND_TO_TX[entry.kind] ?? entry.kind);
   appendFinancialLog({ data: {
     date: new Date().toISOString(),
+    id: entry.memberId || "—",
     memberName: entry.memberName ?? "—",
     transactionType: tx,
     amount: entry.amount,
   } }).then(() => setSyncError(null))
     .catch((err) => { setSyncError(String(err?.message ?? err)); console.warn("[sheets sync] cash", err); });
 }
-function syncAttendance(personName: string, role: "Member" | "Coach") {
+
+function syncAttendance(id: string, personName: string, role: "Member" | "Coach") {
   appendAttendanceLog({ data: {
     dateTime: new Date().toISOString(),
+    id: id,
     personName, role,
   } }).then(() => setSyncError(null))
     .catch((err) => { setSyncError(String(err?.message ?? err)); console.warn("[sheets sync] attendance", err); });
@@ -67,11 +71,6 @@ function syncAttendance(personName: string, role: "Member" | "Coach") {
 
 // ---------------------------------------------------------------------------
 // PERSISTENCE LAYER (Supabase-ready abstraction)
-//
-// All mutations go through gymStore.* below. The store currently persists to
-// localStorage so member, cash and freeze data survive page refresh. The same
-// API surface is what a Supabase implementation would call — see
-// `src/lib/supabase-prep.md` for the planned schema.
 // ---------------------------------------------------------------------------
 
 export type CashEntry = {
@@ -173,7 +172,7 @@ export const gymStore = {
       ...state.cash,
     ];
     emit();
-    syncCash({ memberName: entry.memberName, amount: entry.amount, kind: entry.kind, planCode: entry.planCode });
+    syncCash({ memberId: entry.memberId, memberName: entry.memberName, amount: entry.amount, kind: entry.kind, planCode: entry.planCode });
   },
 
   logExpense(entry: Omit<ExpenseEntry, "id" | "ts"> & { ts?: string }) {
@@ -228,13 +227,13 @@ export const gymStore = {
     m.coachId = coachId;
     persistMembers();
     emit();
+    syncMember(m);
   },
 
   renewMember(memberId: string, planCode: PlanCode, amountPaid: number): Member | null {
     const m = MEMBERS.find((x) => x.id === memberId);
     if (!m) return null;
     const today = tzTodayISO();
-    // Start renewal from later of today vs current subEnd
     const base = m.subEnd > today ? m.subEnd : today;
     const newEnd = tzAddMonthsISO(base, PLAN_MONTHS[planCode]);
     m.subStart = today;
@@ -246,7 +245,7 @@ export const gymStore = {
       ...m.history,
     ];
     persistMembers();
-    // Cash log
+    
     state.cash = [
       {
         id: crypto.randomUUID(), ts: new Date().toISOString(),
@@ -258,7 +257,7 @@ export const gymStore = {
     ];
     emit();
     syncMember(m);
-    syncCash({ memberName: m.name, amount: amountPaid, kind: "renewal", planCode });
+    syncCash({ memberId: m.id, memberName: m.name, amount: amountPaid, kind: "renewal", planCode });
     return m;
   },
 
@@ -269,11 +268,11 @@ export const gymStore = {
     m.recentCheckIns = [tzTodayISO(), ...m.recentCheckIns].slice(0, 20);
     persistMembers();
     emit();
-    syncAttendance(m.name, "Member");
+    syncAttendance(m.id, m.name, "Member");
   },
 
   recordCoachAttendance(coachName: string) {
-    syncAttendance(coachName, "Coach");
+    syncAttendance(coachName, coachName, "Coach");
   },
 
   freezeMember(memberId: string, win: FreezeWindow) {
@@ -282,7 +281,7 @@ export const gymStore = {
     const days = Math.max(0, Math.round(
       (new Date(win.to).getTime() - new Date(win.from).getTime()) / 86_400_000,
     ));
-    m.subEnd = tzAddMonthsISO(m.subEnd, 0); // normalize
+    m.subEnd = tzAddMonthsISO(m.subEnd, 0);
     const [y, mo, d] = m.subEnd.split("-").map(Number);
     const end = new Date(Date.UTC(y, mo - 1, d));
     end.setUTCDate(end.getUTCDate() + days);
@@ -290,6 +289,7 @@ export const gymStore = {
     persistMembers();
     state.frozen = { ...state.frozen, [memberId]: win };
     emit();
+    syncMember(m);
   },
 
   unfreeze(memberId: string) {
@@ -298,7 +298,6 @@ export const gymStore = {
     emit();
   },
 
-  // Dev helper: wipe everything (members + cash + freezes).
   resetAll() {
     state.cash = []; state.expenses = []; state.frozen = {};
     state.staff = defaults.staff;

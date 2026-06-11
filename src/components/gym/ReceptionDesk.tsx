@@ -16,8 +16,6 @@ import {
 import { useCoaches, type Coach } from "@/lib/coaches-data";
 import { gymStore } from "@/lib/gym-store";
 import { useI18n } from "@/lib/i18n";
-// استيراد دالة المزامنة مع جوجل شيت (تأكد من مسار الملف لديك، غالباً يكون هكذا)
-import { appendAttendanceLog } from "@/lib/sheets-sync.functions"; 
 
 type Role = "Member" | "Coach";
 type CheckIn = {
@@ -105,7 +103,7 @@ export function ReceptionDesk() {
       return;
     }
     
-    // تسجيل محلي للواجهة
+    // تسجيل محلي للواجهة (وهذه الدالة ستقوم آلياً بالمزامنة السحابية عبر gym-store)
     gymStore.recordCheckIn(m.id);
     const now = Date.now();
     setCheckIns((prev) => [
@@ -116,15 +114,10 @@ export function ReceptionDesk() {
     toast.success(lang === "ar" ? `تم تسجيل دخول: ${m.name}` : `Pointage réussi pour ${m.name}`);
     setQuery("");
     inputRef.current?.focus();
-
-    // المزامنة السحابية مع Google Sheets (تعمل في الخلفية بدون تعطيل الواجهة)
-    appendAttendanceLog({
-      data: { dateTime: new Date(now).toISOString(), id: m.id, personName: m.name, role: "Member" }
-    }).catch((err) => console.error("Google Sheets Sync Error:", err));
   };
 
   const handleCheckInCoach = (c: Coach) => {
-    // تسجيل محلي للواجهة
+    // تسجيل محلي للواجهة (وهذه الدالة ستقوم آلياً بالمزامنة السحابية عبر gym-store)
     gymStore.recordCoachAttendance(c.name);
     const now = Date.now();
     setCheckIns((prev) => [
@@ -135,11 +128,6 @@ export function ReceptionDesk() {
     toast.success(lang === "ar" ? `تم تسجيل المدرب: ${c.name}` : `Coach pointé : ${c.name}`);
     setQuery("");
     inputRef.current?.focus();
-
-    // المزامنة السحابية مع Google Sheets لحضور المدرب
-    appendAttendanceLog({
-      data: { dateTime: new Date(now).toISOString(), id: c.id, personName: c.name, role: "Coach" }
-    }).catch((err) => console.error("Google Sheets Sync Error:", err));
   };
 
   const shiftLabel =

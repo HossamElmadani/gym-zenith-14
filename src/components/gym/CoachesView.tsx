@@ -509,12 +509,9 @@ function ArchiveCoachDialog({
 }
 
 
-function buildReminder(member: Member, coach: Coach, lang: string) {
+function buildReminder(member: Member, coach: Coach) {
   const first = member.name.split(" ")[0];
-  if (lang === "ar") {
-    return `سلام ${first}، تذكير سريع بأن حصتك مع الكوتش ${coach.name} ستكون اليوم على الساعة ${coach.startTime}. نراك هناك! 💪`;
-  }
-  return `Salam ${first}, petit rappel que votre séance avec le Coach ${coach.name} est aujourd'hui à ${coach.startTime}. À toute à l'heure ! 💪`;
+  return `سلام ${first}، تذكير سريع بأن حصتك مع الكوتش ${coach.name} ستكون اليوم على الساعة ${coach.startTime}. نراك هناك! 💪`;
 }
 
 function AssignedMembersTable({ members, coach, mode }: { members: Member[]; coach: Coach; mode: "all" | "today" }) {
@@ -575,11 +572,10 @@ function AssignedMembersTable({ members, coach, mode }: { members: Member[]; coa
               const status = subStatus(m.subEnd);
               const statusLabel = t(`status.${status}` as any) || status;
               
-              const message = mode === "today"
-                ? buildReminder(m, coach, lang)
-                : (lang === "ar" 
-                    ? `سلام ${m.name.split(" ")[0]}، معك نادي PULSE — الكوتش ${coach.name} في انتظارك. نراك في الحصة القادمة 💪`
-                    : `Salam ${m.name.split(" ")[0]}, ici PULSE — votre coach ${coach.name} vous attend. À la prochaine séance 💪`);
+              // استبدل التعريف القديم بـ:
+            const message = mode === "today"
+              ? buildReminder(m, coach)
+              : `سلام ${m.name.split(" ")[0]}، معك نادي PULSE — الكوتش ${coach.name} في انتظارك. نراك في الحصة القادمة 💪`;
               
               const href = buildWaLink(m.phone, message);
               

@@ -87,13 +87,13 @@ function Workspace() {
               {label} · {shiftLabel}
             </Badge>
             <span className="text-sm text-muted-foreground hidden sm:inline">{accentLabel}</span>
-            {role === "owner" && <LiveSyncIndicator />}
+            <LiveSyncIndicator />
           </div>
 
-          <div className="hidden md:flex relative flex-1 max-w-sm ms-2">
+          {/* <div className="hidden md:flex relative flex-1 max-w-sm ms-2">
             <Search className="size-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input placeholder={t("search.members")} className="ps-9 bg-background/50" />
-          </div>
+          </div> */}
 
           <div className="ms-auto flex items-center gap-2">
             <div className="flex items-center rounded-xl border border-border/60 bg-card/40 p-1 overflow-x-auto">

@@ -16,6 +16,8 @@ import {
 import { useCoaches, type Coach } from "@/lib/coaches-data";
 import { gymStore } from "@/lib/gym-store";
 import { useI18n } from "@/lib/i18n";
+// استيراد دالة المزامنة مع جوجل شيت (تأكد من مسار الملف لديك، غالباً يكون هكذا)
+import { appendAttendanceLog } from "@/lib/sheets-sync.functions"; 
 
 type Role = "Member" | "Coach";
 type CheckIn = {
@@ -99,28 +101,45 @@ export function ReceptionDesk() {
 
   const handleCheckInMember = (m: Member) => {
     if (daysRemaining(m.subEnd) <= 0) {
-      toast.error(lang === "ar" ? `الاشتراك منتهي: ${m.name}` : `Subscription expired: ${m.name}`);
+      toast.error(lang === "ar" ? `الاشتراك منتهي: ${m.name}` : `Abonnement expiré : ${m.name}`);
       return;
     }
+    
+    // تسجيل محلي للواجهة
     gymStore.recordCheckIn(m.id);
+    const now = Date.now();
     setCheckIns((prev) => [
-      { id: `${m.id}-${Date.now()}`, personId: m.id, name: m.name, role: "Member", gender: m.gender, ts: Date.now() },
+      { id: `${m.id}-${now}`, personId: m.id, name: m.name, role: "Member", gender: m.gender, ts: now },
       ...prev,
     ]);
-    toast.success(lang === "ar" ? `تم تسجيل دخول: ${m.name}` : `Check-in successful for ${m.name}`);
+    
+    toast.success(lang === "ar" ? `تم تسجيل دخول: ${m.name}` : `Pointage réussi pour ${m.name}`);
     setQuery("");
     inputRef.current?.focus();
+
+    // المزامنة السحابية مع Google Sheets (تعمل في الخلفية بدون تعطيل الواجهة)
+    appendAttendanceLog({
+      data: { dateTime: new Date(now).toISOString(), id: m.id, personName: m.name, role: "Member" }
+    }).catch((err) => console.error("Google Sheets Sync Error:", err));
   };
 
   const handleCheckInCoach = (c: Coach) => {
+    // تسجيل محلي للواجهة
     gymStore.recordCoachAttendance(c.name);
+    const now = Date.now();
     setCheckIns((prev) => [
-      { id: `${c.id}-${Date.now()}`, personId: c.id, name: c.name, role: "Coach", ts: Date.now() },
+      { id: `${c.id}-${now}`, personId: c.id, name: c.name, role: "Coach", ts: now },
       ...prev,
     ]);
-    toast.success(lang === "ar" ? `تم تسجيل المدرب: ${c.name}` : `Coach checked in: ${c.name}`);
+    
+    toast.success(lang === "ar" ? `تم تسجيل المدرب: ${c.name}` : `Coach pointé : ${c.name}`);
     setQuery("");
     inputRef.current?.focus();
+
+    // المزامنة السحابية مع Google Sheets لحضور المدرب
+    appendAttendanceLog({
+      data: { dateTime: new Date(now).toISOString(), id: c.id, personName: c.name, role: "Coach" }
+    }).catch((err) => console.error("Google Sheets Sync Error:", err));
   };
 
   const shiftLabel =
@@ -135,13 +154,13 @@ export function ReceptionDesk() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Activity className="size-4 text-primary" />
-            {lang === "ar" ? "تسجيلات الدخول اليوم" : "Live Check-ins Today"}
+            {lang === "ar" ? "تسجيلات الدخول اليوم" : "Présences d'Aujourd'hui"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-xl border border-border/60 bg-card/40 p-4">
             <div className="text-xs text-muted-foreground">
-              {lang === "ar" ? "إجمالي الدخول" : "Total entries"}
+              {lang === "ar" ? "إجمالي الدخول" : "Total des entrées"}
             </div>
             <div className="mt-1 text-4xl font-semibold tracking-tight">
               <bdi dir="ltr">{checkIns.length}</bdi>
@@ -153,7 +172,7 @@ export function ReceptionDesk() {
             {checkIns.length === 0 && (
               <div className="text-sm text-muted-foreground py-10 text-center">
                 <Users className="size-8 mx-auto mb-2 opacity-40" />
-                {lang === "ar" ? "في انتظار أول تسجيل دخول…" : "Waiting for first check-in…"}
+                {lang === "ar" ? "في انتظار أول تسجيل دخول…" : "En attente du premier pointage..."}
               </div>
             )}
             {checkIns.map((c) => (
@@ -207,10 +226,10 @@ export function ReceptionDesk() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <div className="text-xs uppercase tracking-widest text-muted-foreground">
-                  {lang === "ar" ? "تسجيل دخول ذكي" : "Smart Visual Check-in"}
+                  {lang === "ar" ? "تسجيل دخول ذكي" : "Pointage Visuel Intelligent"}
                 </div>
                 <h2 className="text-xl md:text-2xl font-semibold tracking-tight">
-                  {lang === "ar" ? "اختر الشخص لتسجيل الدخول" : "Tap a person to check in"}
+                  {lang === "ar" ? "اختر الشخص لتسجيل الدخول" : "Cliquez sur une personne pour la pointer"}
                 </h2>
               </div>
               <Badge variant="secondary" className="self-start sm:self-auto bg-primary/10 text-primary border border-primary/20">
@@ -222,11 +241,11 @@ export function ReceptionDesk() {
               <TabsList className="grid grid-cols-2 w-full sm:w-72">
                 <TabsTrigger value="members" className="gap-1.5">
                   <Users className="size-4" />
-                  {lang === "ar" ? "الأعضاء" : "Members"}
+                  {lang === "ar" ? "الأعضاء" : "Membres"}
                 </TabsTrigger>
                 <TabsTrigger value="coaches" className="gap-1.5">
                   <Dumbbell className="size-4" />
-                  {lang === "ar" ? "المدربون" : "Coaches"}
+                  {lang === "ar" ? "المدربون" : "Coachs"}
                 </TabsTrigger>
               </TabsList>
 
@@ -239,8 +258,8 @@ export function ReceptionDesk() {
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={
                     tab === "members"
-                      ? (lang === "ar" ? "ابحث بالاسم أو رقم العضو…" : "Search member by name or ID…")
-                      : (lang === "ar" ? "ابحث عن مدرب…" : "Search coach by name…")
+                      ? (lang === "ar" ? "ابحث بالاسم أو رقم العضو…" : "Rechercher par nom ou ID...")
+                      : (lang === "ar" ? "ابحث عن مدرب…" : "Rechercher un coach...")
                   }
                   className="h-12 ps-10 bg-background/50 rounded-xl"
                 />
@@ -250,7 +269,7 @@ export function ReceptionDesk() {
                 {shift === "closed" ? (
                   <ClosedState label={t("shift.closed")} />
                 ) : filteredMembers.length === 0 ? (
-                  <EmptyState text={lang === "ar" ? "لا يوجد أعضاء مطابقون." : "No matching members."} />
+                  <EmptyState text={lang === "ar" ? "لا يوجد أعضاء مطابقون." : "Aucun membre correspondant."} />
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[640px] overflow-auto pr-1">
                     {filteredMembers.map((m) => (
@@ -264,7 +283,7 @@ export function ReceptionDesk() {
                 {shift === "closed" ? (
                   <ClosedState label={t("shift.closed")} />
                 ) : filteredCoaches.length === 0 ? (
-                  <EmptyState text={lang === "ar" ? "لا يوجد مدربون نشطون لهذا الدوام." : "No active coaches for this shift."} />
+                  <EmptyState text={lang === "ar" ? "لا يوجد مدربون نشطون لهذا الدوام." : "Aucun coach actif pour ce service."} />
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[640px] overflow-auto pr-1">
                     {filteredCoaches.map((c) => (
@@ -301,7 +320,7 @@ function ClosedState({ label }: { label: string }) {
 function MemberCheckInCard({
   member, lang, onCheckIn,
 }: {
-  member: Member; lang: "ar" | "en"; onCheckIn: (m: Member) => void;
+  member: Member; lang: "ar" | "fr"; onCheckIn: (m: Member) => void;
 }) {
   const days = daysRemaining(member.subEnd);
   const status = subStatus(member.subEnd);
@@ -313,9 +332,9 @@ function MemberCheckInCard({
                           : "bg-destructive/20 text-destructive border-destructive/30";
 
   const statusLabel =
-    status === "active"   ? (lang === "ar" ? "نشط" : "Active")
-  : status === "expiring" ? (lang === "ar" ? "قارب الانتهاء" : "Expiring")
-                          : (lang === "ar" ? "منتهي" : "Expired");
+    status === "active"   ? (lang === "ar" ? "نشط" : "Actif")
+  : status === "expiring" ? (lang === "ar" ? "قارب الانتهاء" : "Expire Bientôt")
+                          : (lang === "ar" ? "منتهي" : "Expiré");
 
   return (
     <div
@@ -348,7 +367,7 @@ function MemberCheckInCard({
           {statusLabel}
         </Badge>
         <div className="text-[11px] text-muted-foreground">
-          <bdi dir="ltr">{days > 0 ? days : 0}d {lang === "ar" ? "" : "left"}</bdi>
+          <bdi dir="ltr">{days > 0 ? days : 0}j {lang === "ar" ? "" : "restants"}</bdi>
         </div>
       </div>
 
@@ -364,8 +383,8 @@ function MemberCheckInCard({
       >
         <CheckCircle className="size-4" />
         {expired
-          ? (lang === "ar" ? "منتهي" : "Expired")
-          : (lang === "ar" ? "تسجيل الدخول" : "Check-in")}
+          ? (lang === "ar" ? "منتهي" : "Expiré")
+          : (lang === "ar" ? "تسجيل الدخول" : "Pointer")}
       </Button>
     </div>
   );
@@ -374,7 +393,7 @@ function MemberCheckInCard({
 function CoachCheckInCard({
   coach, lang, onCheckIn,
 }: {
-  coach: Coach; lang: "ar" | "en"; onCheckIn: (c: Coach) => void;
+  coach: Coach; lang: "ar" | "fr"; onCheckIn: (c: Coach) => void;
 }) {
   return (
     <div className="group rounded-2xl border border-border/60 bg-card/40 p-3 flex flex-col gap-3 transition-all hover:border-primary/40 hover:bg-card/60">
@@ -401,7 +420,7 @@ function CoachCheckInCard({
 
       <Button onClick={() => onCheckIn(coach)} size="sm" className="w-full gap-1.5">
         <CheckCircle className="size-4" />
-        {lang === "ar" ? "بدء الحصة" : "Start shift"}
+        {lang === "ar" ? "بدء الحصة" : "Démarrer le service"}
       </Button>
     </div>
   );

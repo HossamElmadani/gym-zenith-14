@@ -3,20 +3,20 @@ import { createServerFn } from "@tanstack/react-start";
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_sheets/v4";
 
 // ---------------------------------------------------------------------------
-// PHASE 4 — Relational Google Sheets Sync
+// PHASE 4 — Relational Google Sheets Sync (Version Française)
 // Four tabs, each acting as an append-only ledger so the spreadsheet behaves
 // like a lightweight relational warehouse.
 // ---------------------------------------------------------------------------
-const MEMBERS_TAB     = "Members";
-const FINANCIALS_TAB  = "Financials";
-const ATTENDANCE_TAB  = "Attendance";
-const COACHES_TAB     = "Coaches_Cycle";
+const MEMBERS_TAB     = "Membres";
+const FINANCIALS_TAB  = "Finances";
+const ATTENDANCE_TAB  = "Presences";
+const COACHES_TAB     = "Cycles_Coachs";
 
 const HEADERS: Record<string, string[]> = {
-  [MEMBERS_TAB]:    ["ID", "Name", "Phone", "Gender", "Current Coach", "Sub End Date", "Insurance End Date"],
-  [FINANCIALS_TAB]: ["Date", "Member Name", "Transaction Type", "Amount (MAD)"],
-  [ATTENDANCE_TAB]: ["Date & Time", "Person Name", "Role"],
-  [COACHES_TAB]:    ["Coach Name", "Cycle Start Date", "Cycle End Date", "Active Members Count"],
+  [MEMBERS_TAB]:     ["ID", "Nom complet", "Téléphone", "Genre", "Coach Actuel", "Fin d'Abonnement", "Fin d'Assurance"],
+  [FINANCIALS_TAB]:  ["Date", "ID", "Nom du Membre", "Type de Transaction", "Montant (MAD)"],
+  [ATTENDANCE_TAB]:  ["Date & Heure", "ID", "Nom de la Personne", "Rôle"],
+  [COACHES_TAB]:     ["Nom du Coach", "Date Début Cycle", "Date Fin Cycle", "Membres Actifs"],
 };
 
 function authHeaders() {
@@ -101,19 +101,21 @@ export const appendMemberLog = createServerFn({ method: "POST" })
 
 export const appendFinancialLog = createServerFn({ method: "POST" })
   .inputValidator((data: {
-    date: string; memberName: string; transactionType: string; amount: number;
+    date: string; id: string; memberName: string; transactionType: string; amount: number;
   }) => data)
   .handler(async ({ data }) =>
-    appendRow(FINANCIALS_TAB, [data.date, data.memberName, data.transactionType, data.amount]),
+    appendRow(FINANCIALS_TAB, [data.date, data.id, data.memberName, data.transactionType, data.amount]),
   );
 
 export const appendAttendanceLog = createServerFn({ method: "POST" })
   .inputValidator((data: {
-    dateTime: string; personName: string; role: "Member" | "Coach";
+    dateTime: string; id: string; personName: string; role: "Member" | "Coach";
   }) => data)
-  .handler(async ({ data }) =>
-    appendRow(ATTENDANCE_TAB, [data.dateTime, data.personName, data.role]),
-  );
+  .handler(async ({ data }) => {
+    // ترجمة الدور للفرنسية قبل إرساله لجوجل شيت
+    const roleFr = data.role === "Coach" ? "Coach" : "Membre";
+    return appendRow(ATTENDANCE_TAB, [data.dateTime, data.id, data.personName, roleFr]);
+  });
 
 export const appendCoachCycleLog = createServerFn({ method: "POST" })
   .inputValidator((data: {
@@ -126,19 +128,19 @@ export const appendCoachCycleLog = createServerFn({ method: "POST" })
 // Backwards-compat shim: old cash-log callsites map into the new Financials tab.
 export const appendCashLog = createServerFn({ method: "POST" })
   .inputValidator((data: {
-    timestamp: string; memberName: string; amount: number; kind: string;
+    timestamp: string; id: string; memberName: string; amount: number; kind: string;
   }) => data)
   .handler(async ({ data }) => {
     const map: Record<string, string> = {
-      registration: "Plan",
-      renewal:      "Plan",
-      dropin:       "1D Pass",
-      insurance:    "Insurance",
-      other:        "Other",
+      registration: "Abonnement",
+      renewal:      "Renouvellement",
+      dropin:       "Pass Jour (1D)",
+      insurance:    "Assurance",
+      other:        "Autre",
     };
     const transactionType = map[data.kind] ?? data.kind;
     return appendRow(FINANCIALS_TAB,
-      [data.timestamp, data.memberName, transactionType, data.amount]);
+      [data.timestamp, data.id, data.memberName, transactionType, data.amount]);
   });
 
 export const checkSheetsHealth = createServerFn({ method: "GET" }).handler(async () => {

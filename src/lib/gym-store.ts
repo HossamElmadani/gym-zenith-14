@@ -271,8 +271,8 @@ export const gymStore = {
     syncAttendance(m.id, m.name, "Member");
   },
 
-  recordCoachAttendance(coachName: string) {
-    syncAttendance(coachName, coachName, "Coach");
+ recordCoachAttendance(coachId: string, coachName: string) {
+    syncAttendance(coachId, coachName, "Coach");
   },
 
   freezeMember(memberId: string, win: FreezeWindow) {

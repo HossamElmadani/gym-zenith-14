@@ -116,9 +116,9 @@ export function ReceptionDesk() {
     inputRef.current?.focus();
   };
 
-  const handleCheckInCoach = (c: Coach) => {
+const handleCheckInCoach = (c: Coach) => {
     // تسجيل محلي للواجهة (وهذه الدالة ستقوم آلياً بالمزامنة السحابية عبر gym-store)
-    gymStore.recordCoachAttendance(c.name);
+    gymStore.recordCoachAttendance(c.id, c.name); // 👈 التعديل هنا
     const now = Date.now();
     setCheckIns((prev) => [
       { id: `${c.id}-${now}`, personId: c.id, name: c.name, role: "Coach", ts: now },

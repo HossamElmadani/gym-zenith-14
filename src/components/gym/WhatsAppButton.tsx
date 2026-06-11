@@ -12,17 +12,33 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+// const greeting = (m: Member, tone: Tone) => {
+//   const d = daysRemaining(m.subEnd);
+//   switch (tone) {
+//     case "renew":
+//       return `Hi ${m.name.split(" ")[0]}, this is PULSE Gym 👋 Your ${m.plan} subscription expires in ${d} day${d === 1 ? "" : "s"}. Renew today and keep your streak alive — reply YES and we'll handle it in 30 seconds.`;
+//     case "churn":
+//       return `Hey ${m.name.split(" ")[0]}, we miss you at PULSE 💪 You haven't checked in for a while. Want us to book your next session or pause your plan? Just reply.`;
+//     case "denied":
+//       return `Hi ${m.name.split(" ")[0]}, you tried to check in today but our schedule is reserved for the other group. Your next allowed day is tomorrow — see you then!`;
+//     case "welcome":
+//       return `Welcome to PULSE Gym, ${m.name.split(" ")[0]}! 🎉 Your access is active. Save this number — we'll send your schedule, reminders and rewards here.`;
+//   }
+// };
+
 const greeting = (m: Member, tone: Tone) => {
   const d = daysRemaining(m.subEnd);
+  const name = m.name.split(" ")[0];
+  
   switch (tone) {
     case "renew":
-      return `Hi ${m.name.split(" ")[0]}, this is PULSE Gym 👋 Your ${m.plan} subscription expires in ${d} day${d === 1 ? "" : "s"}. Renew today and keep your streak alive — reply YES and we'll handle it in 30 seconds.`;
+      return `مرحباً ${name}، نذكرك في PULSE Gym 👋 اشتراكك الحالي سينتهي خلال ${d} يوم. جدد اشتراكك اليوم وحافظ على تقدمك — أجب بـ "نعم" وسنتكفل بالأمر خلال 30 ثانية.`;
     case "churn":
-      return `Hey ${m.name.split(" ")[0]}, we miss you at PULSE 💪 You haven't checked in for a while. Want us to book your next session or pause your plan? Just reply.`;
+      return `أهلاً ${name}، اشتقنا لك في PULSE 💪 لم نرك منذ مدة. هل تريد منا حجز حصتك القادمة أو تجميد اشتراكك؟ فقط أجبنا هنا.`;
     case "denied":
-      return `Hi ${m.name.split(" ")[0]}, you tried to check in today but our schedule is reserved for the other group. Your next allowed day is tomorrow — see you then!`;
+      return `مرحباً ${name}، حاولت الدخول اليوم ولكن توقيت الحصة مخصص للمجموعة الأخرى. يومك المسموح به هو غداً — نراك حينها!`;
     case "welcome":
-      return `Welcome to PULSE Gym, ${m.name.split(" ")[0]}! 🎉 Your access is active. Save this number — we'll send your schedule, reminders and rewards here.`;
+      return `أهلاً بك في PULSE Gym يا ${name}! 🎉 اشتراكك مفعل الآن. احفظ هذا الرقم، سنرسل لك عبره جدول الحصص والتذكيرات ومكافآت خاصة.`;
   }
 };
 

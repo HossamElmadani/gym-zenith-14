@@ -137,6 +137,8 @@ export function OnboardingView() {
       const finalCin = cin.trim().toUpperCase() || "PASS";
       const finalPhone = phone.trim() || "0000000000";
 
+      const finalAge = age ? parseInt(age, 10) : undefined;
+
       const insuranceEnd = insurance ? tzAddMonthsISO(start, 12) : null;
       const planAmount = Math.max(0, cashNumber - (insurance ? 100 : 0));
 
@@ -146,6 +148,7 @@ export function OnboardingView() {
         cin: finalCin,
         phone: finalPhone,
         gender,
+        age: finalAge,
         plan,
         subStart: start,
         subEnd: endDate,

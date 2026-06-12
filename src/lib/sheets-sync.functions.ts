@@ -13,7 +13,8 @@ const ATTENDANCE_TAB  = "Presences";
 const COACHES_TAB     = "Cycles_Coachs";
 
 const HEADERS: Record<string, string[]> = {
-  [MEMBERS_TAB]:     ["ID", "Nom complet", "Téléphone", "Genre", "Coach Actuel", "Fin d'Abonnement", "Fin d'Assurance"],
+  // 👇 ضفنا كلمة "Âge" هنا حتى يصير عمود جديد بالشيت
+  [MEMBERS_TAB]:     ["ID", "Nom complet", "Téléphone", "Âge", "Genre", "Coach Actuel", "Fin d'Abonnement", "Fin d'Assurance"],
   [FINANCIALS_TAB]:  ["Date", "ID", "Nom du Membre", "Type de Transaction", "Montant (MAD)"],
   [ATTENDANCE_TAB]:  ["Date & Heure", "ID", "Nom de la Personne", "Rôle"],
   [COACHES_TAB]:     ["Nom du Coach", "Date Début Cycle", "Date Fin Cycle", "Membres Actifs"],
@@ -93,10 +94,12 @@ async function appendRow(tab: string, row: (string | number)[]) {
 export const appendMemberLog = createServerFn({ method: "POST" })
   .inputValidator((data: {
     id: string; name: string; phone: string; gender: string;
+    age?: string; // 👈 ضفنا العمر هنا حتى Typescript يعرفه
     coach: string; subEnd: string; insuranceEnd: string;
   }) => data)
   .handler(async ({ data }) =>
-    appendRow(MEMBERS_TAB, [data.id, data.name, data.phone, data.gender, data.coach, data.subEnd, data.insuranceEnd]),
+    // 👇 وضفنا `data.age || ""` للمصفوفة حتى ينرسل للشيت
+    appendRow(MEMBERS_TAB, [data.id, data.name, data.phone, data.age || "", data.gender, data.coach, data.subEnd, data.insuranceEnd]),
   );
 
 export const appendFinancialLog = createServerFn({ method: "POST" })
@@ -112,7 +115,7 @@ export const appendAttendanceLog = createServerFn({ method: "POST" })
     dateTime: string; id: string; personName: string; role: "Member" | "Coach";
   }) => data)
   .handler(async ({ data }) => {
-    // ترجمة الدور للفرنسية قبل إرساله لجوجل شيت
+    // ترجمة الدور للفرنسية avant de l'envoyer à Google Sheets
     const roleFr = data.role === "Coach" ? "Coach" : "Membre";
     return appendRow(ATTENDANCE_TAB, [data.dateTime, data.id, data.personName, roleFr]);
   });

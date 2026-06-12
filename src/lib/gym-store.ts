@@ -39,7 +39,9 @@ function coachNameFor(coachId?: string | null): string {
 
 function syncMember(m: Member) {
   appendMemberLog({ data: {
-    id: m.id, name: m.name, phone: m.phone, gender: m.gender === "male" ? "Homme" : "Femme",
+    id: m.id, name: m.name, phone: m.phone, 
+    gender: m.gender === "male" ? "Homme" : "Femme",
+    age: m.age ? m.age.toString() : "", // 👈 أضفنا العمر هنا للمزامنة
     coach: coachNameFor(m.coachId), subEnd: m.subEnd,
     insuranceEnd: m.insuranceEnd ?? "",
   } }).then(() => setSyncError(null))
@@ -212,6 +214,7 @@ export const gymStore = {
       createdAt: tzTodayISO(),
       history: m.history ?? [],
       recentCheckIns: [],
+      age: m.age, // 👈 أضفنا العمر هنا للحفظ المحلي
       ...m,
     };
     MEMBERS.unshift(full);

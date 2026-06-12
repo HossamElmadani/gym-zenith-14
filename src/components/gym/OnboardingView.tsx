@@ -26,6 +26,8 @@ import { MemberQR } from "./MemberQR";
 import { ReceiptDialog, type ReceiptPayload } from "./ReceiptDialog";
 import { useI18n } from "@/lib/i18n";
 
+const AGE_OPTIONS = Array.from({ length: 67 }, (_, i) => String(i + 14));
+
 type CinStatus = "idle" | "checking" | "ok" | "duplicate";
 
 export function OnboardingView() {
@@ -36,6 +38,7 @@ export function OnboardingView() {
   const [cinStatus, setCinStatus] = useState<CinStatus>("idle");
   const [phone, setPhone] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "">("");
+  const [age, setAge] = useState<string>("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -214,10 +217,9 @@ export function OnboardingView() {
         <Card className="glass rounded-2xl xl:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <User2 className="size-4 text-primary" /> {t("onboard.identity")}
+              <User2 className="size-4 text-primary" /> {lang === "ar" ? "هوية العضو" : "Identité du membre"}
             </CardTitle>
-            <CardDescription>{t("onboard.identitySub")}</CardDescription>
-            <CardHeader>
+            <CardDescription>{lang === "ar" ? "التفاصيل الشخصية وأوقات الدخول." : "Détails personnels et horaires d'accès."}</CardDescription>
             
             {/* التنبيه الذكي يظهر فقط لاشتراك 1D */}
             {plan === "1D" && (
@@ -226,72 +228,102 @@ export function OnboardingView() {
                 <span>
                   {lang === "ar" 
                     ? "أنت في وضع الحصة الواحدة: يمكنك ترك الاسم والهاتف والبطاقة فارغة، سيقوم النظام بتوليد زائر تلقائياً. اختر الجنس فقط." 
-                    : "Day Pass Mode: Name, phone, and CIN are optional. System will auto-generate them. Just pick a gender."}
+                    : "Mode Pass Journalier : Nom, téléphone et CIN sont optionnels. Le système les générera automatiquement. Choisissez juste le sexe."}
                 </span>
               </div>
             )}
           </CardHeader>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="name">{t("form.fullName")}</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("onboard.namePlaceholder")} className="bg-background/50" />
+          <CardContent className="space-y-4"> {/* غيرنا grid-cols الى space-y-4 للتحكم الدقيق */}
+            
+            {/* الصف الأول: الاسم والبطاقة (كل واحد يأخذ نص المساحة) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="name">{lang === "ar" ? "الاسم الكامل" : "Nom complet"}</Label>
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={lang === "ar" ? "مثال: أحمد العلمي" : "ex: Ahmed El Alami"} className="bg-background/50" />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="cin" className="flex items-center justify-between">
+                  <span>{lang === "ar" ? "البطاقة الوطنية" : "CIN / Carte d'identité"}</span>
+                  {cinStatus === "checking" && <span className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="size-3 animate-spin" /> {lang === "ar" ? "جاري التحقق…" : "Vérification..."}</span>}
+                  {cinStatus === "ok" && <span className="text-xs text-success flex items-center gap-1"><CheckCircle2 className="size-3" /> {lang === "ar" ? "متاح" : "Disponible"}</span>}
+                  {cinStatus === "duplicate" && <span className="text-xs text-destructive flex items-center gap-1"><X className="size-3" /> {lang === "ar" ? "مسجل مسبقاً" : "Déjà enregistré"}</span>}
+                </Label>
+                <Input id="cin" value={cin}
+                  onChange={(e) => { setCin(e.target.value); setCinStatus("idle"); }}
+                  onBlur={handleCinBlur}
+                  placeholder="AB123456"
+                  className={cn("bg-background/50 uppercase",
+                    cinStatus === "duplicate" && "border-destructive/60",
+                    cinStatus === "ok" && "border-success/60")} />
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="cin" className="flex items-center justify-between">
-                <span>{t("form.cin")}</span>
-                {cinStatus === "checking" && <span className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="size-3 animate-spin" /> {lang === "ar" ? "جاري التحقق…" : "checking..."}</span>}
-                {cinStatus === "ok" && <span className="text-xs text-success flex items-center gap-1"><CheckCircle2 className="size-3" /> {lang === "ar" ? "متاح" : "available"}</span>}
-                {cinStatus === "duplicate" && <span className="text-xs text-destructive flex items-center gap-1"><X className="size-3" /> {lang === "ar" ? "مسجل مسبقاً" : "already registered"}</span>}
-              </Label>
-              <Input id="cin" value={cin}
-                onChange={(e) => { setCin(e.target.value); setCinStatus("idle"); }}
-                onBlur={handleCinBlur}
-                placeholder="AB123456"
-                className={cn("bg-background/50 uppercase",
-                  cinStatus === "duplicate" && "border-destructive/60",
-                  cinStatus === "ok" && "border-success/60")} />
+            {/* الصف الثاني: الهاتف (نصف) والعمر/الجنس (نصف) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* الهاتف */}
+              <div className="space-y-1.5">
+                <Label htmlFor="phone">{lang === "ar" ? "رقم الهاتف" : "Numéro de téléphone"}</Label>
+                <Input id="phone" type="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+212 600 000 000" className="bg-background/50" />
+              </div>
+
+              {/* العمر والجنس */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="flex items-center justify-between">
+                    <span>{lang === "ar" ? "العمر" : "Âge"}</span>
+                    <span className="text-[10px] text-muted-foreground">+14 {lang === "ar" ? "سنة" : "ans"}</span>
+                  </Label>
+                  <Select value={age} onValueChange={setAge}>
+                    <SelectTrigger className="bg-background/50">
+                      <SelectValue placeholder={lang === "ar" ? "اختر" : "Sélect"} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[250px]">
+                      {AGE_OPTIONS.map((a) => (
+                        <SelectItem key={a} value={a}>
+                          {a} {lang === "ar" ? "سنة" : "ans"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>{lang === "ar" ? "الجنس" : "Sexe"}</Label>
+                  <Select value={gender || undefined} onValueChange={(v) => { setGender(v as "male" | "female"); setCoachId("none"); }}>
+                    <SelectTrigger className="bg-background/50">
+                      <SelectValue placeholder={lang === "ar" ? "اختر" : "Sélectionner"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">{lang === "ar" ? "ذكر" : "Homme"}</SelectItem>
+                      <SelectItem value="female">{lang === "ar" ? "أنثى" : "Femme"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">{t("form.phone")}</Label>
-              <Input id="phone" type="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+212 600 000 000" className="bg-background/50" />
-            </div>
+            {/* ملاحظة أوقات الدخول (تظهر تحت الجنس والهاتف) */}
+            <p className={cn("text-[11px] flex items-start gap-1.5", gender ? "text-foreground/80" : "text-muted-foreground")}>
+              <Info className="size-3.5 mt-0.5 shrink-0 text-primary" />
+              {scheduleHelper}
+            </p>
 
-            <div className="space-y-1.5">
-              <Label>{t("form.gender")}</Label>
-              <Select value={gender || undefined} onValueChange={(v) => { setGender(v as "male" | "female"); setCoachId("none"); }}>
-                <SelectTrigger className="bg-background/50"><SelectValue placeholder={t("form.selectGender")} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">{t("gender.male")}</SelectItem>
-                  <SelectItem value="female">{t("gender.female")}</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className={cn("text-xs flex items-start gap-1.5 mt-1", gender ? "text-foreground/80" : "text-muted-foreground")}>
-                <Info className="size-3.5 mt-0.5 shrink-0 text-primary" />
-                {scheduleHelper}
-              </p>
-            </div>
-
-            <div className="md:col-span-2 space-y-1.5">
+            {/* الصف الثالث: الكوتش */}
+            <div className="space-y-1.5 pt-2 border-t border-border/40">
               <Label className="flex items-center gap-1.5">
-                <Dumbbell className="size-3.5 text-primary" /> {t("form.assignCoach")}
+                <Dumbbell className="size-3.5 text-primary" /> {lang === "ar" ? "تعيين مدرب" : "Assigner un coach"}
               </Label>
-              <Select
-                value={coachId}
-                onValueChange={setCoachId}
-                disabled={!gender}
-              >
+              <Select value={coachId} onValueChange={setCoachId} disabled={!gender}>
                 <SelectTrigger className={cn(
                   "bg-background/50",
                   gender === "male" && "border-blue-500/40",
                   gender === "female" && "border-rose-500/40",
                 )}>
-                  <SelectValue placeholder={gender ? t("form.selectCoach") : t("form.pickGenderFirst")} />
+                  <SelectValue placeholder={gender ? (lang === "ar" ? "اختر مدرباً" : "Sélectionner un coach") : (lang === "ar" ? "اختر الجنس أولاً" : "Choisir le sexe d'abord")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">{t("form.none")}</SelectItem>
+                  <SelectItem value="none">{lang === "ar" ? "لا يوجد" : "Aucun"}</SelectItem>
                   {eligibleCoaches.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       <span className="flex items-center gap-2">
@@ -307,13 +339,14 @@ export function OnboardingView() {
                 {gender
                   ? (lang === "ar" 
                       ? `يتم عرض مدربي ${gender === "male" ? "الرجال" : "النساء"} فقط — تم تطبيق العزل التام.` 
-                      : `Only ${gender === "male" ? "Men Only" : "Women Only"} coaches are shown — gender isolation enforced.`)
-                  : t("onboard.coachHelper")}
+                      : `Seuls les coachs pour ${gender === "male" ? "Hommes" : "Femmes"} sont affichés — séparation appliquée.`)
+                  : (lang === "ar" ? "يتم تصفية المدربين تلقائياً حسب الجنس." : "La liste des coachs est filtrée automatiquement.")}
               </p>
             </div>
 
-            <div className="md:col-span-2 space-y-1.5">
-              <Label>{t("onboard.picture")}</Label>
+            {/* الصف الرابع: الصورة */}
+            <div className="space-y-1.5">
+              <Label>{lang === "ar" ? "صورة الملف الشخصي" : "Photo de profil (optionnelle)"}</Label>
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
@@ -328,8 +361,8 @@ export function OnboardingView() {
                   <AvatarFallback className="bg-muted text-muted-foreground"><User2 className="size-5" /></AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="text-sm font-medium flex items-center gap-2"><Upload className="size-4 text-primary" /> {t("onboard.upload")}</div>
-                  <div className="text-xs text-muted-foreground"><bdi>{t("onboard.uploadSub")}</bdi></div>
+                  <div className="text-sm font-medium flex items-center gap-2"><Upload className="size-4 text-primary" /> {lang === "ar" ? "ارفع الصورة" : "Glissez l'image ou cliquez pour importer"}</div>
+                  <div className="text-xs text-muted-foreground"><bdi>PNG · JPG · {lang === "ar" ? "حتى" : "jusqu'à"} 5MB</bdi></div>
                 </div>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFiles(e.target.files)} />
               </div>
@@ -341,13 +374,13 @@ export function OnboardingView() {
         <Card className="glass rounded-2xl xl:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <ShieldCheck className="size-4 text-primary" /> {t("onboard.planCash")}
+              <ShieldCheck className="size-4 text-primary" /> {lang === "ar" ? "الاشتراك والدفع" : "Abonnement & Caisse"}
             </CardTitle>
-            <CardDescription>{t("onboard.planCashSub")}</CardDescription>
+            <CardDescription>{lang === "ar" ? "يتم حساب تاريخ الانتهاء تلقائياً." : "La date de fin se calcule automatiquement."}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label>{t("form.plan")}</Label>
+              <Label>{lang === "ar" ? "الباقة" : "Abonnement"}</Label>
               <Select value={plan} onValueChange={(v) => onPlanChange(v as PlanCode)}>
                 <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -355,7 +388,7 @@ export function OnboardingView() {
                     <SelectItem key={p.code} value={p.code}>
                       <span className="flex items-center justify-between gap-6 w-full">
                         <span>{p.label}</span>
-                        <span className="text-muted-foreground text-xs"><bdi>{p.price} {t("common.currency")}</bdi></span>
+                        <span className="text-muted-foreground text-xs"><bdi>{p.price} MAD</bdi></span>
                       </span>
                     </SelectItem>
                   ))}
@@ -364,7 +397,7 @@ export function OnboardingView() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>{t("form.startDate")}</Label>
+              <Label>{lang === "ar" ? "تاريخ البدء" : "Date de début"}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button type="button" variant="outline" className="w-full justify-start font-normal bg-background/50">
@@ -379,7 +412,7 @@ export function OnboardingView() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>{t("form.endDate")}</Label>
+              <Label>{lang === "ar" ? "تاريخ الانتهاء" : "Date de fin"}</Label>
               <div className="rounded-md border border-input bg-muted/40 px-3 h-9 flex items-center justify-between">
                 <span className="text-sm">{tzFormatDate(endDate)}</span>
                 <Badge variant="secondary" className="bg-accent text-foreground text-[10px]">auto</Badge>
@@ -390,27 +423,26 @@ export function OnboardingView() {
               <Shield className="size-4 text-sky-400 mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium flex items-center gap-1.5">
-                  {lang === "ar" ? "تأمين سنوي" : "Annual Insurance"}
+                  {lang === "ar" ? "تأمين سنوي" : "Assurance annuelle"}
                   <span className="text-[11px] text-sky-300">
-                    (+<bdi dir="ltr">100 {t("common.currency")}</bdi>)
+                    (+<bdi dir="ltr">100 MAD</bdi>)
                   </span>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
                   {insurance
                     ? (lang === "ar"
                         ? <>صالح حتى <bdi dir="ltr">{tzFormatDate(tzAddMonthsISO(tzTodayISO(startDate), 12))}</bdi></>
-                        : <>Valid until <bdi dir="ltr">{tzFormatDate(tzAddMonthsISO(tzTodayISO(startDate), 12))}</bdi></>)
-                    : (lang === "ar" ? "غير مفعّل" : "Not enabled")}
+                        : <>Valide jusqu'au <bdi dir="ltr">{tzFormatDate(tzAddMonthsISO(tzTodayISO(startDate), 12))}</bdi></>)
+                    : (lang === "ar" ? "غير مفعّل" : "Non activée")}
                 </p>
               </div>
-              <Switch checked={insurance} onCheckedChange={onInsuranceToggle} aria-label="Annual insurance" />
+              <Switch checked={insurance} onCheckedChange={onInsuranceToggle} aria-label="Assurance annuelle" />
             </div>
-
 
             <div className="space-y-1.5 pt-2 border-t border-border/40">
               <Label className="flex items-center gap-1.5">
                 <Wallet className="size-3.5 text-success" />
-                {t("form.cashAmount")}
+                {lang === "ar" ? "المبلغ المدفوع (درهم)" : "Montant payé (MAD)"}
               </Label>
               <Input
                 type="number"
@@ -421,7 +453,7 @@ export function OnboardingView() {
                 className="bg-background/50 text-xl font-semibold text-success"
               />
               <p className="text-[11px] text-muted-foreground">
-                {t("onboard.cashRequired")}
+                {lang === "ar" ? "إلزامي. الدفع نقداً فقط." : "Obligatoire. Paiement en espèces uniquement."}
               </p>
             </div>
           </CardContent>
@@ -433,16 +465,16 @@ export function OnboardingView() {
             {!registered ? (
               <>
                 <div className="flex-1 min-w-[200px]">
-                  <div className="text-sm font-medium">{t("onboard.ready")}</div>
+                  <div className="text-sm font-medium">{lang === "ar" ? "جاهز للتسجيل؟" : "Prêt à inscrire ?"}</div>
                   <p className="text-xs text-muted-foreground">
-                    {t("onboard.readySub")}
+                    {lang === "ar" ? "املأ الحقول، وتأكد من المبلغ ثم قم بالتسجيل." : "Remplissez les champs, confirmez l'espèce, puis inscrivez."}
                   </p>
                 </div>
                 <Button type="submit" disabled={!canSubmit || submitting} className="min-w-[200px]">
                   {submitting ? (
-                    <><Loader2 className="size-4 animate-spin" /> {t("onboard.registering")}</>
+                    <><Loader2 className="size-4 animate-spin" /> {lang === "ar" ? "جاري التسجيل..." : "Inscription en cours..."}</>
                   ) : (
-                    <><Wallet className="size-4" /> {t("action.register")} {lang === "ar" ? "واستلام" : "& take"} <bdi>{cashNumber || 0} {t("common.currency")}</bdi></>
+                    <><Wallet className="size-4" /> {lang === "ar" ? "تسجيل واستلام" : "Inscrire & encaisser"} <bdi>{cashNumber || 0} MAD</bdi></>
                   )}
                 </Button>
               </>
@@ -453,19 +485,19 @@ export function OnboardingView() {
                   <div>
                     <div className="text-sm font-medium">{registered.name} · {registered.id}</div>
                     <div className="text-xs text-muted-foreground">
-                      {lang === "ar" ? "تم الدفع" : "Paid"} <bdi>{registered.amount} {t("common.currency")}</bdi> · {lang === "ar" ? "ينتهي" : "ends"} <bdi dir="ltr">{tzFormatDate(registered.endDate)}</bdi>
+                      {lang === "ar" ? "تم دفع" : "Payé"} <bdi>{registered.amount} MAD</bdi> · {lang === "ar" ? "ينتهي في" : "Expire le"} <bdi dir="ltr">{tzFormatDate(registered.endDate)}</bdi>
                     </div>
                   </div>
                 </div>
                 <MemberQR member={registered} size={72} withCaption={false} />
                 <Button type="button" onClick={openReceipt} className="bg-success text-black hover:bg-success/90">
-                  <Printer className="size-4" /> {lang === "ar" ? "طباعة الإيصال" : "Print receipt"}
+                  <Printer className="size-4" /> {lang === "ar" ? "طباعة الإيصال" : "Imprimer le reçu"}
                 </Button>
                 <Button asChild type="button" variant="secondary">
-                  <a href={waHref} target="_blank" rel="noreferrer"><MessageCircle className="size-4" /> {lang === "ar" ? "رسالة واتساب" : "WhatsApp welcome"}</a>
+                  <a href={waHref} target="_blank" rel="noreferrer"><MessageCircle className="size-4" /> {lang === "ar" ? "رسالة واتساب" : "Message WhatsApp"}</a>
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
-                  {lang === "ar" ? "تسجيل عضو آخر" : "Register another"}
+                  {lang === "ar" ? "تسجيل عضو آخر" : "Inscrire un autre"}
                 </Button>
               </>
             )}

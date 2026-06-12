@@ -15,6 +15,7 @@ export type Member = {
   cin: string;
   phone: string;
   gender: Gender;
+  age?: number;           // 👈 هذا هو السطر الجديد اللي ضفناه للعمر
   lastCheckIn: string;    // ISO date (Africa/Casablanca)
   streak: number;
   points: number;

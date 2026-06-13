@@ -5,8 +5,17 @@ import { Progress } from "@/components/ui/progress";
 import { Flame, Gift, Sparkles, Target, Calendar, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { DEMO_MEMBER, PROGRESS_DATA } from "@/lib/gym-data";
+import { PROGRESS_DATA } from "@/lib/gym-data";
 import { cn } from "@/lib/utils";
+
+const DEMO_MEMBER = {
+  id: "M-1041",
+  name: "Liam Carter",
+  gender: "male",
+  streak: 4,
+  points: 480,
+  plan: "3M",
+};
 
 const WEEK = [
   { day: "Mon", gender: "men" as const },

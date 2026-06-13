@@ -153,6 +153,81 @@ export const DICT = {
   "action.remind":          { ar: "تذكير", fr: "Rappeler" },
   "action.print":           { ar: "طباعة", fr: "Imprimer" },
   "action.whatsapp":        { ar: "واتساب", fr: "WhatsApp" },
+
+  // Edit Member Modal
+  "edit.title": { ar: "تعديل الملف الشخصي", fr: "Modifier le profil" },
+  "edit.photo": { ar: "صورة الملف الشخصي", fr: "Photo de profil" },
+  "edit.name": { ar: "الاسم الكامل", fr: "Nom complet" },
+  "edit.phone": { ar: "رقم الهاتف", fr: "Téléphone" },
+  "edit.cin": { ar: "البطاقة الوطنية", fr: "CIN" },
+  "edit.gender": { ar: "الجنس", fr: "Genre" },
+  "edit.age": { ar: "العمر", fr: "Âge" },
+  "edit.cancel": { ar: "إلغاء", fr: "Annuler" },
+  "edit.save": { ar: "حفظ", fr: "Enregistrer" },
+  "edit.uploadHelp": { ar: "اسحب الصورة أو اضغط للرفع", fr: "Glissez l'image ou cliquez" },
+  "edit.uploadLimit": { ar: "PNG · JPG · حتى 5MB", fr: "PNG · JPG · jusqu'à 5MB" },
+  "edit.select": { ar: "اختر", fr: "Sélectionner" },
+  "edit.years": { ar: "سنة", fr: "ans" },
+  "edit.toast.onlyImages": { ar: "ملفات الصور فقط", fr: "Seuls les fichiers d'image sont autorisés" },
+  "edit.toast.nameRequired": { ar: "الاسم مطلوب", fr: "Le nom est requis" },
+  "edit.toast.phoneRequired": { ar: "رقم الهاتف مطلوب", fr: "Le numéro de téléphone est requis" },
+  "edit.toast.cinRequired": { ar: "رقم البطاقة الوطنية مطلوب", fr: "Le CIN est requis" },
+  "edit.toast.success": { ar: "تم تحديث الملف الشخصي بنجاح", fr: "Profil mis à jour avec succès" },
+  "edit.toast.failed": { ar: "فشل التحديث: ", fr: "Échec de la mise à jour : " },
+
+  // Admin View Dashboard
+  "admin.filterTitle": { ar: "تصفية لوحة التحكم", fr: "Filtre du tableau de bord" },
+  "admin.filterRangeFrom": { ar: "البيانات المعروضة من", fr: "Données du" },
+  "admin.filterRangeTo": { ar: "إلى", fr: "au" },
+  "admin.filterRangeStartDefault": { ar: "البداية", fr: "début" },
+  "admin.filterRangeEndDefault": { ar: "اليوم", fr: "aujourd'hui" },
+  "admin.filter.7d": { ar: "آخر 7 أيام", fr: "Derniers 7 jours" },
+  "admin.filter.30d": { ar: "آخر 30 يومًا", fr: "Derniers 30 jours" },
+  "admin.filter.thisMonth": { ar: "هذا الشهر", fr: "Ce mois-ci" },
+  "admin.filter.all": { ar: "كل الأوقات", fr: "Tout le temps" },
+  "admin.newMembers": { ar: "الأعضاء الجدد", fr: "Nouveaux Membres" },
+  "admin.newMembersSub": { ar: "سجلوا خلال الفترة المحددة", fr: "Inscrits sur cette période" },
+  "admin.totalRevenue": { ar: "مجموع الإيرادات", fr: "Revenu Total" },
+  "admin.totalRevenueSub": { ar: "المبالغ المحصلة نقداً", fr: "MAD collectés au total" },
+  "admin.transactions": { ar: "المعاملات المالية", fr: "Transactions" },
+  "admin.transactionsSub": { ar: "عدد إيصالات القبض المدخلة", fr: "Reçus émis sur cette période" },
+  "admin.revenueTrend": { ar: "تطور المداخيل (آخر 7 أيام)", fr: "Tendance des Revenus (7 derniers jours)" },
+  "admin.membersOverview": { ar: "أرقام الأعضاء", fr: "Aperçu des Membres" },
+  "admin.membersOverviewSubPrefix": { ar: "توزيع جميع الأعضاء في النظام (إجمالي:", fr: "Distribution de tous les membres du système (Total :" },
+  "admin.status.active": { ar: "نشط", fr: "Actifs" },
+  "admin.status.expiring": { ar: "ينتهي قريباً (< 7أيام)", fr: "Expire Bientôt (< 7j)" },
+  "admin.status.expired": { ar: "منتهي", fr: "Expirés" },
+  "admin.status.pending": { ar: "في الانتظار", fr: "En attente" },
+  "admin.financialBreakdown": { ar: "تفاصيل الإيرادات", fr: "Détails des Recettes" },
+  "admin.breakdown.total": { ar: "إجمالي المداخيل", fr: "Total Revenus" },
+  "admin.breakdown.inscriptions": { ar: "الاشتراكات الجديدة", fr: "Inscriptions" },
+  "admin.breakdown.renewals": { ar: "تجديد الاشتراكات", fr: "Renouvellements" },
+  "admin.breakdown.insurance": { ar: "التأمين الرياضي", fr: "Assurance" },
+  "admin.transactionCount": { ar: "معاملة", fr: "trans." },
+
+  // Members Directory
+  "members.noMatch": { ar: "لا يوجد أعضاء يطابقون هذا البحث.", fr: "Aucun membre ne correspond à ce filtre." },
+  "members.noCoach": { ar: "لا يوجد مدرب", fr: "Aucun coach" },
+  "members.noInsurance": { ar: "غير مؤمن", fr: "Pas d'assurance" },
+  "members.frozen": { ar: "مُجمّد", fr: "Gelé" },
+  "members.age": { ar: "العمر", fr: "Âge" },
+  "members.subUsed": { ar: "نسبة استهلاك الاشتراك", fr: "Abonnement utilisé" },
+  "members.start": { ar: "البداية", fr: "Début" },
+  "members.startsOn": { ar: "يبدأ في", fr: "Commence le" },
+  "members.validUntil": { ar: "صالح حتى", fr: "Valide jusqu'au" },
+  "members.expiredOn": { ar: "منتهي في", fr: "Expiré le" },
+  "members.end": { ar: "النهاية", fr: "Fin" },
+  "members.pendingSub": { ar: "لم يبدأ الاشتراك بعد", fr: "L'abonnement n'a pas encore commencé" },
+  "members.daysRemaining": { ar: "أيام متبقية", fr: "jours restants" },
+  "members.insuranceStatus": { ar: "التأمين الرياضي", fr: "Statut de l'assurance" },
+  "members.assignedCoach": { ar: "المدرب الشخصي", fr: "Coach désigné" },
+  "members.paymentHistory": { ar: "سجل الأداءات", fr: "Historique des paiements" },
+  "members.recentCheckins": { ar: "تسجيلات الدخول الأخيرة", fr: "Entrées récentes" },
+  "members.noRecentCheckins": { ar: "لا توجد تسجيلات دخول حديثة.", fr: "Aucune entrée récente." },
+  "members.mostRecentVisit": { ar: "أحدث زيارة", fr: "Visite la plus récente" },
+  "members.renewCash": { ar: "تجديد (نقداً)", fr: "Renouveler (espèces)" },
+  "members.whatsappMember": { ar: "مراسلة العضو", fr: "Contacter le membre" },
+  "members.toast.unfrozen": { ar: "تم إلغاء تجميد العضو بنجاح", fr: "Membre dégelé avec succès" },
 } as const satisfies Dict;
 
 export type DictKey = keyof typeof DICT;
@@ -166,15 +241,15 @@ type I18nCtxValue = {
 };
 
 const I18nCtx = createContext<I18nCtxValue>({
-  lang: "ar", setLang: () => {}, toggle: () => {}, t: (k) => k, dir: "rtl",
+  lang: "fr", setLang: () => {}, toggle: () => {}, t: (k) => k, dir: "ltr",
 });
 
 const STORAGE = "pulse.lang";
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
-    if (typeof window === "undefined") return "ar";
-    return (localStorage.getItem(STORAGE) as Lang) || "ar";
+    if (typeof window === "undefined") return "fr";
+    return (localStorage.getItem(STORAGE) as Lang) || "fr";
   });
 
   // Arabic is RTL, French is LTR

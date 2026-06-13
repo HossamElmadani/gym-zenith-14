@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarDays, Check, ChevronsUpDown, Clock, Copy, Dumbbell, Plus, Sparkles, User2, UserPlus, Users2, Archive, ShieldAlert } from "lucide-react";
+import { CalendarDays, Check, ChevronsUpDown, Clock, Copy, Dumbbell, Plus, Sparkles, User2, UserPlus, Users2, Archive, ShieldAlert, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -22,7 +23,7 @@ import {
 } from "@/lib/coaches-data";
 import { MEMBERS, todayGender, daysRemaining, subStatus, type Member } from "@/lib/gym-data";
 import { useGymStore, gymStore } from "@/lib/gym-store";
-import { tzDayOfWeek, tzFormatDate, tzTodayISO } from "@/lib/gym-tz";
+import { tzDayOfWeek, tzFormatDate, tzTodayISO, tzUsedPct } from "@/lib/gym-tz";
 import { buildWaLink } from "./WhatsAppButton";
 import { useI18n } from "@/lib/i18n";
 import { InsuranceShield } from "./InsuranceShield";
@@ -128,9 +129,18 @@ function CoachGrid({ coaches, onSelect }: { coaches: Coach[]; onSelect: (c: Coac
             )}
           >
             <div className="flex items-start gap-3">
-              <div className={cn("size-12 rounded-xl grid place-items-center ring-1 shrink-0", theme.bg, theme.ring)}>
-                <Dumbbell className={cn("size-5", theme.text)} />
-              </div>
+              {c.photoUrl ? (
+                <Avatar className="size-12 rounded-xl ring-1 shrink-0">
+                  <AvatarImage src={c.photoUrl} alt={c.name} className="object-cover rounded-xl" />
+                  <AvatarFallback className={cn("rounded-xl grid place-items-center ring-1 shrink-0 text-sm", theme.bg, theme.text)}>
+                    {c.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div className={cn("size-12 rounded-xl grid place-items-center ring-1 shrink-0", theme.bg, theme.ring)}>
+                  <Dumbbell className={cn("size-5", theme.text)} />
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <div className="font-semibold tracking-tight truncate">{c.name}</div>
@@ -165,12 +175,17 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
   const [days, setDays] = useState<Weekday[]>(ALLOWED_DAYS[defaultAudience]);
   const [startTime, setStartTime] = useState("18:00");
   const [endTime, setEndTime] = useState("20:00");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
     setName(""); setSpecialty("");
     setAudience(defaultAudience);
     setDays(ALLOWED_DAYS[defaultAudience]);
     setStartTime("18:00"); setEndTime("20:00");
+    setPhotoFile(null); setAvatar(null);
   };
 
   const onAudienceChange = (a: CoachAudience) => {
@@ -183,21 +198,37 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
     setDays((prev) => prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]);
   };
 
-  const submit = () => {
+  const onFiles = (files: FileList | null) => {
+    const f = files?.[0];
+    if (!f) return;
+    if (!f.type.startsWith("image/")) return toast.error(lang === "ar" ? "ملفات الصور فقط" : "Only image files");
+    setPhotoFile(f);
+    const reader = new FileReader();
+    reader.onload = () => setAvatar(reader.result as string);
+    reader.readAsDataURL(f);
+  };
+
+  const submit = async () => {
     if (!name.trim() || !specialty.trim()) { toast.error(lang === "ar" ? "اسم المدرب والتخصص مطلوبان" : "Le nom et la spécialité du coach sont requis"); return; }
     if (days.length === 0) { toast.error(lang === "ar" ? "اختر يوم عمل واحد على الأقل" : "Choisissez au moins un jour de travail"); return; }
     if (endTime <= startTime) { toast.error(lang === "ar" ? "وقت الانتهاء يجب أن يكون بعد وقت البدء" : "L'heure de fin doit être après l'heure de début"); return; }
     
-    const c = coachStore.add({
-      name: name.trim(), specialty: specialty.trim(), audience,
-      workingDays: days.sort((a, b) => a - b), startTime, endTime,
-    });
-    
-    toast.success(lang === "ar" ? `تمت إضافة المدرب · ${c.name}` : `Coach ajouté · ${c.name}`, {
-      description: `${audience === "men" ? t("coach.menOnly") : t("coach.womenOnly")} · ${formatSchedule(c)}`,
-    });
-    reset();
-    setOpen(false);
+    try {
+      const c = await coachStore.add({
+        name: name.trim(), specialty: specialty.trim(), audience,
+        workingDays: days.sort((a, b) => a - b), startTime, endTime,
+        photoFile: photoFile || undefined,
+      });
+      
+      toast.success(lang === "ar" ? `تمت إضافة المدرب · ${c.name}` : `Coach ajouté · ${c.name}`, {
+        description: `${audience === "men" ? t("coach.menOnly") : t("coach.womenOnly")} · ${formatSchedule(c)}`,
+      });
+      reset();
+      setOpen(false);
+    } catch (err) {
+      toast.error(lang === "ar" ? "فشل إضافة المدرب" : "Failed to add coach");
+      console.error(err);
+    }
   };
 
   return (
@@ -286,6 +317,29 @@ function AddCoachDialog({ open, setOpen, defaultAudience }: { open: boolean; set
               <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="bg-background/50" />
             </div>
           </div>
+
+          <div className="space-y-1.5">
+            <Label>{lang === "ar" ? "صورة الملف الشخصي" : "Photo de profil (optionnelle)"}</Label>
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => { e.preventDefault(); setDragOver(false); onFiles(e.dataTransfer.files); }}
+              onClick={() => fileRef.current?.click()}
+              className={cn("flex items-center gap-4 rounded-xl border border-dashed p-4 cursor-pointer transition-all",
+                "border-border/70 hover:border-primary/60 hover:bg-accent/30",
+                dragOver && "border-primary bg-primary/10")}
+            >
+              <Avatar className="size-14 ring-2 ring-border">
+                {avatar ? <AvatarImage src={avatar} alt="preview" /> : null}
+                <AvatarFallback className="bg-muted text-muted-foreground"><User2 className="size-5" /></AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="text-sm font-medium flex items-center gap-2"><Upload className="size-4 text-primary" /> {lang === "ar" ? "ارفع الصورة" : "Glissez l'image ou cliquez pour importer"}</div>
+                <div className="text-xs text-muted-foreground"><bdi>PNG · JPG · {lang === "ar" ? "حتى" : "jusqu'à"} 5MB</bdi></div>
+              </div>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFiles(e.target.files)} />
+            </div>
+          </div>
         </div>
 
         <DialogFooter>
@@ -302,6 +356,7 @@ function CoachDetailSheet({ coach, onClose, activeCoaches }: { coach: Coach | nu
   useGymStore((s) => s.v);
   const [assignOpen, setAssignOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   if (!coach) return null;
   const theme = audienceTheme[coach.audience];
@@ -313,92 +368,148 @@ function CoachDetailSheet({ coach, onClose, activeCoaches }: { coach: Coach | nu
   const cycle = getCoachBillingCycle(coach.joinedAt, tzTodayISO());
   const activeInCycle = members.filter((m) => daysRemaining(m.subEnd) > 0).length;
   const replacementOptions = activeCoaches.filter((c) => c.id !== coach.id && c.audience === coach.audience);
+  const cyclePct = tzUsedPct(cycle.start, cycle.end);
+
+  const genderRing = coach.audience === "men" 
+    ? "ring-4 ring-blue-500/60 ring-offset-2 ring-offset-background" 
+    : "ring-4 ring-rose-500/60 ring-offset-2 ring-offset-background";
 
   return (
     <Sheet open={!!coach} onOpenChange={(b) => !b && onClose()}>
       <SheetContent className="glass border-border/60 w-full sm:max-w-xl overflow-y-auto">
-        <SheetHeader className="space-y-3">
-          <div className="flex items-start gap-3">
-            <div className={cn("size-14 rounded-2xl grid place-items-center ring-1 shrink-0", theme.bg, theme.ring)}>
-              <Dumbbell className={cn("size-6", theme.text)} />
-            </div>
-            <div className="flex-1 text-start">
-              <SheetTitle className="text-lg">{coach.name}</SheetTitle>
-              <SheetDescription className="flex items-center gap-2 mt-0.5">
-                <span>{coach.specialty}</span>
-                <span className="text-border">·</span>
-                <Badge variant="outline" className={cn("text-[10px] border", theme.chip)}>{audienceLabel}</Badge>
+        <SheetHeader className="space-y-4">
+          <div className="flex flex-col items-center text-center space-y-4 pt-4">
+            <Avatar 
+              className={cn(
+                "size-32 border-2 border-border/30 transition-all",
+                coach.photoUrl ? "cursor-pointer hover:scale-105 hover:opacity-90 active:scale-95" : "",
+                genderRing
+              )}
+              onClick={() => coach.photoUrl && setZoomOpen(true)}
+            >
+              {coach.photoUrl ? (
+                <AvatarImage src={coach.photoUrl} alt={coach.name} className="object-cover" />
+              ) : null}
+              <AvatarFallback className={cn("text-2xl font-bold", theme.bg, theme.text)}>
+                {coach.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className="space-y-1">
+              <SheetTitle className="text-xl font-bold tracking-tight">{coach.name}</SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground font-mono flex items-center justify-center gap-1.5">
+                <span>ID: {coach.id}</span>
+                <span>·</span>
+                <Badge variant="outline" className={cn("text-[10px] border whitespace-nowrap", theme.chip)}>
+                  {audienceLabel}
+                </Badge>
               </SheetDescription>
             </div>
           </div>
+
           <div className="rounded-xl border border-border/40 bg-card/40 p-3 flex items-center gap-2 text-sm">
             <CalendarDays className={cn("size-4", theme.text)} />
             <span className="text-muted-foreground">{lang === "ar" ? "الجدول:" : "Planning:"}</span>
             <span className="font-medium"><bdi>{formatLocalSchedule(coach, lang)}</bdi></span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-xl border border-border/40 bg-card/40 p-3">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "تاريخ الالتحاق" : "A rejoint"}</div>
-              <div className="text-sm font-medium mt-0.5"><bdi dir="ltr">{tzFormatDate(coach.joinedAt)}</bdi></div>
-            </div>
-            <div className="rounded-xl border border-border/40 bg-card/40 p-3">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "الدورة الحالية" : "Cycle actuel"}</div>
-              <div className="text-xs font-medium mt-0.5"><bdi dir="ltr">{tzFormatDate(cycle.start)} → {tzFormatDate(cycle.end)}</bdi></div>
-            </div>
-            <div className="rounded-xl border border-border/40 bg-card/40 p-3 col-span-2 flex items-center justify-between">
-              <div>
-                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "الأعضاء النشطون في الدورة" : "Membres actifs (ce cycle)"}</div>
-                <div className={cn("text-lg font-semibold", theme.text)}><bdi dir="ltr">{activeInCycle}</bdi></div>
-              </div>
-              <Button variant="outline" size="sm" className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setArchiveOpen(true)}>
-                <Archive className="size-3.5" /> {lang === "ar" ? "أرشفة المدرب" : "Archiver le coach"}
-              </Button>
-            </div>
-          </div>
         </SheetHeader>
 
+        <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
+          <DialogContent className="max-w-md md:max-w-lg border-border/40 bg-card/90 backdrop-blur-xl p-1 overflow-hidden flex flex-col items-center justify-center">
+            <DialogTitle className="sr-only">{coach.name}</DialogTitle>
+            <img 
+              src={coach.photoUrl || ""} 
+              alt={coach.name} 
+              className="max-h-[70vh] w-full object-contain rounded-lg"
+            />
+          </DialogContent>
+        </Dialog>
 
-        <div className="mt-6 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <Users2 className="size-4 text-primary" /> {t("nav.members")}
-            </h3>
-            <Button size="sm" className="gap-1.5" onClick={() => setAssignOpen(true)}>
-              <UserPlus className="size-3.5" /> {t("member.assign")}
+        <div className="mt-6 space-y-6">
+          {/* Identity Grid */}
+          <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-border/40 bg-background/20 p-3 text-sm">
+            <div className="space-y-0.5 text-left">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "التخصص" : "Specialty"}</span>
+              <div className="font-semibold text-foreground">{coach.specialty}</div>
+            </div>
+            <div className="space-y-0.5 text-left">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "الجمهور المستهدف" : "Target Audience"}</span>
+              <div className="font-semibold text-foreground">{audienceLabel}</div>
+            </div>
+            <div className="space-y-0.5 text-left">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "تاريخ الالتحاق" : "Joined Date"}</span>
+              <div className="font-semibold text-foreground font-mono"><bdi dir="ltr">{tzFormatDate(coach.joinedAt)}</bdi></div>
+            </div>
+            <div className="space-y-0.5 text-left">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{lang === "ar" ? "إجمالي الأعضاء" : "Total Members"}</span>
+              <div className="font-semibold text-foreground font-mono"><bdi dir="ltr">{activeInCycle} active / {members.length} total</bdi></div>
+            </div>
+          </div>
+
+          {/* Billing Cycle Progress Bar */}
+          <section className="rounded-xl border border-border/60 bg-background/40 p-4">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="uppercase tracking-wide">{lang === "ar" ? "نسبة استهلاك الدورة المالية" : "Billing Cycle progress"}</span>
+              <span><bdi>{cyclePct}%</bdi></span>
+            </div>
+            <Progress value={cyclePct} className="mt-3 h-3" />
+            <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+              <span>{lang === "ar" ? "البداية" : "Start"} · {tzFormatDate(cycle.start)}</span>
+              <span>{lang === "ar" ? "النهاية" : "End"} · {tzFormatDate(cycle.end)}</span>
+            </div>
+          </section>
+
+          {/* Management actions */}
+          <div className="flex items-center justify-between p-3 rounded-xl border border-border/40 bg-background/20">
+            <span className="text-xs text-muted-foreground">{lang === "ar" ? "إجراءات المدرب" : "Coach Management"}</span>
+            <Button variant="outline" size="sm" className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setArchiveOpen(true)}>
+              <Archive className="size-3.5" /> {lang === "ar" ? "أرشفة المدرب" : "Archiver le coach"}
             </Button>
           </div>
 
-          <Tabs defaultValue="all" dir={lang === "ar" ? "rtl" : "ltr"}>
-            <TabsList className="glass border border-border/60 bg-card/40 p-1 h-auto w-full grid grid-cols-2">
-              <TabsTrigger value="all" className="gap-1.5">
-                {lang === "ar" ? "الكل" : "Tous les assignés"}
-                <Badge variant="secondary" className="bg-accent/40 text-[10px]">{members.length}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="today" className="gap-1.5">
-                {t("member.roster")}
-                <Badge variant="secondary" className={cn("text-[10px]", isWorkingToday ? "bg-success/15 text-success" : "bg-muted/40")}>
-                  {todayRoster.length}
-                </Badge>
-              </TabsTrigger>
-            </TabsList>
+          {/* Members list */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Users2 className="size-4 text-primary" /> {t("nav.members")}
+              </h3>
+              <Button size="sm" className="gap-1.5" onClick={() => setAssignOpen(true)}>
+                <UserPlus className="size-3.5" /> {t("member.assign")}
+              </Button>
+            </div>
 
-            <TabsContent value="all" className="mt-3">
-              <AssignedMembersTable members={members} coach={coach} mode="all" />
-            </TabsContent>
-            <TabsContent value="today" className="mt-3">
-              {!isWorkingToday ? (
-                <Card className="glass rounded-xl">
-                  <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                    {lang === "ar" 
-                      ? `${coach.name} ليس لديه دوام اليوم. هذا اليوم مخصص للمجموعة الأخرى أو يوم راحة.` 
-                      : `${coach.name} n'est pas prévu aujourd'hui. Ce jour est réservé à l'autre groupe ou c'est un jour de repos.`}
-                  </CardContent>
-                </Card>
-              ) : (
-                <AssignedMembersTable members={todayRoster} coach={coach} mode="today" />
-              )}
-            </TabsContent>
-          </Tabs>
+            <Tabs defaultValue="all" dir={lang === "ar" ? "rtl" : "ltr"}>
+              <TabsList className="glass border border-border/60 bg-card/40 p-1 h-auto w-full grid grid-cols-2">
+                <TabsTrigger value="all" className="gap-1.5">
+                  {lang === "ar" ? "الكل" : "Tous les assignés"}
+                  <Badge variant="secondary" className="bg-accent/40 text-[10px]">{members.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="today" className="gap-1.5">
+                  {t("member.roster")}
+                  <Badge variant="secondary" className={cn("text-[10px]", isWorkingToday ? "bg-success/15 text-success" : "bg-muted/40")}>
+                    {todayRoster.length}
+                  </Badge>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="all" className="mt-3">
+                <AssignedMembersTable members={members} coach={coach} mode="all" />
+              </TabsContent>
+              <TabsContent value="today" className="mt-3">
+                {!isWorkingToday ? (
+                  <Card className="glass rounded-xl">
+                    <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                      {lang === "ar" 
+                        ? `${coach.name} ليس لديه دوام اليوم. هذا اليوم مخصص للمجموعة الأخرى أو يوم راحة.` 
+                        : `${coach.name} n'est pas prévu aujourd'hui. Ce jour est réservé à l'autre groupe ou c'est un jour de repos.`}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <AssignedMembersTable members={todayRoster} coach={coach} mode="today" />
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
 
         <div className="mt-6 rounded-xl border border-border/40 bg-card/40 p-3 text-xs text-muted-foreground flex items-start gap-2">
@@ -584,6 +695,9 @@ function AssignedMembersTable({ members, coach, mode }: { members: Member[]; coa
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="size-7">
+                        {m.photoUrl ? (
+                          <AvatarImage src={m.photoUrl} alt={m.name} className="object-cover" />
+                        ) : null}
                         <AvatarFallback className="text-[10px] bg-muted">
                           {m.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
                         </AvatarFallback>
@@ -678,7 +792,12 @@ function AssignMemberDialog({ open, onClose, coach }: { open: boolean; onClose: 
               <Button variant="outline" role="combobox" className="w-full justify-between bg-background/50">
                 {chosen ? (
                   <span className="flex items-center gap-2">
-                    <Avatar className="size-5"><AvatarFallback className="text-[9px] bg-muted">{chosen.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}</AvatarFallback></Avatar>
+                    <Avatar className="size-5">
+                      {chosen.photoUrl ? (
+                        <AvatarImage src={chosen.photoUrl} alt={chosen.name} className="object-cover" />
+                      ) : null}
+                      <AvatarFallback className="text-[9px] bg-muted">{chosen.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}</AvatarFallback>
+                    </Avatar>
                     {chosen.name}
                     <span className="text-[10px] text-muted-foreground">{chosen.id}</span>
                   </span>
@@ -701,7 +820,12 @@ function AssignMemberDialog({ open, onClose, coach }: { open: boolean; onClose: 
                         onSelect={() => { setSelected(m.id); setPopOpen(false); }}
                         className="gap-2"
                       >
-                        <Avatar className="size-6"><AvatarFallback className="text-[10px] bg-muted">{m.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}</AvatarFallback></Avatar>
+                        <Avatar className="size-6">
+                          {m.photoUrl ? (
+                            <AvatarImage src={m.photoUrl} alt={m.name} className="object-cover" />
+                          ) : null}
+                          <AvatarFallback className="text-[10px] bg-muted">{m.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}</AvatarFallback>
+                        </Avatar>
                         <div className="flex-1 leading-tight">
                           <div className="text-sm">{m.name}</div>
                           <div className="text-[10px] text-muted-foreground"><bdi>{m.id}</bdi> · CIN <bdi>{m.cin}</bdi> · {daysRemaining(m.subEnd)}d left</div>

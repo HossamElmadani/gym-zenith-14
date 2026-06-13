@@ -30,22 +30,26 @@ export function RenewDialog({
     setAmount(String(PLAN_PRICES[p]));
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!member) return;
     const a = parseFloat(amount);
     if (!a || a <= 0) return toast.error("Enter the cash amount paid");
-    const updated = gymStore.renewMember(member.id, plan, a);
-    if (!updated) return;
-    toast.success("Renewal complete", { description: `${updated.name} · ${a} MAD` });
-    setReceipt({
-      kind: "renewal",
-      member: { id: updated.id, cin: updated.cin, name: updated.name, phone: updated.phone },
-      planCode: plan,
-      amount: a,
-      startDate: tzTodayISO(),
-      endDate: updated.subEnd,
-    });
-    onOpenChange(false);
+    try {
+      const updated = await gymStore.renewMember(member.id, plan, a);
+      if (!updated) return;
+      toast.success("Renewal complete", { description: `${updated.name} · ${a} MAD` });
+      setReceipt({
+        kind: "renewal",
+        member: { id: updated.id, cin: updated.cin, name: updated.name, phone: updated.phone },
+        planCode: plan,
+        amount: a,
+        startDate: tzTodayISO(),
+        endDate: updated.subEnd,
+      });
+      onOpenChange(false);
+    } catch (err) {
+      toast.error("Renewal failed: " + (err as Error).message);
+    }
   };
 
   const start = tzTodayISO();

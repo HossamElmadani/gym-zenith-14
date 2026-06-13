@@ -1,5 +1,6 @@
 // Coach data + persistence (Phase 8/10 — Gender-Isolated Coach & Group Management)
 import { useSyncExternalStore } from "react";
+import { supabase } from "./supabase";
 
 export type CoachAudience = "men" | "women";
 
@@ -43,6 +44,7 @@ export type Coach = {
   createdAt: string;
   joinedAt: string;      // ISO date — drives billing cycle anchor
   status: CoachStatus;
+  photoUrl?: string | null;
 };
 
 /** Compute the current active billing cycle (1 month) anchored on joinedAt's day-of-month. */
@@ -68,60 +70,95 @@ export function formatSchedule(c: Coach): string {
   return `${ordered.join(" · ")} · ${c.startTime}-${c.endTime}`;
 }
 
-const KEY = "pulse.coaches.v2";
-
-const todayIso = () => new Date().toISOString().slice(0, 10);
-const pastIso = (daysAgo: number) => {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - daysAgo);
-  return d.toISOString().slice(0, 10);
-};
-
-const SEED: Coach[] = [
-  { id: "C-M01", name: "Younes El Amrani", specialty: "Bodybuilding",            workingDays: [2, 4, 6], startTime: "18:00", endTime: "21:00", audience: "men",   createdAt: new Date().toISOString(), joinedAt: pastIso(120), status: "active" },
-  { id: "C-M02", name: "Karim Bensaid",    specialty: "Strength & Powerlifting", workingDays: [2, 4, 6], startTime: "06:00", endTime: "09:00", audience: "men",   createdAt: new Date().toISOString(), joinedAt: pastIso(78),  status: "active" },
-  { id: "C-M03", name: "Reda Hakim",       specialty: "Boxing / Cardio",         workingDays: [2, 4, 6], startTime: "19:30", endTime: "21:00", audience: "men",   createdAt: new Date().toISOString(), joinedAt: pastIso(45),  status: "active" },
-  { id: "C-W01", name: "Salma Idrissi",    specialty: "Aerobics & Zumba",        workingDays: [1, 3, 5], startTime: "18:00", endTime: "20:00", audience: "women", createdAt: new Date().toISOString(), joinedAt: pastIso(200), status: "active" },
-  { id: "C-W02", name: "Nadia Tahiri",     specialty: "Pilates & Core",          workingDays: [1, 3, 5], startTime: "09:00", endTime: "11:00", audience: "women", createdAt: new Date().toISOString(), joinedAt: pastIso(95),  status: "active" },
-  { id: "C-W03", name: "Imane Ouazzani",   specialty: "HIIT & Weight Loss",      workingDays: [1, 3, 5], startTime: "17:00", endTime: "19:00", audience: "women", createdAt: new Date().toISOString(), joinedAt: pastIso(60),  status: "active" },
-];
-
-function migrate(c: Coach): Coach {
-  return {
-    ...c,
-    joinedAt: c.joinedAt ?? c.createdAt?.slice(0, 10) ?? todayIso(),
-    status: c.status ?? "active",
-  };
-}
-
-function hydrate(): Coach[] {
-  try {
-    const raw = typeof localStorage !== "undefined" && localStorage.getItem(KEY);
-    if (raw) return (JSON.parse(raw) as Coach[]).map(migrate);
-  } catch {}
-  return SEED;
-}
-
-const state: { coaches: Coach[]; v: number } = { coaches: hydrate(), v: 0 };
+const state: { coaches: Coach[]; v: number } = { coaches: [], v: 0 };
 const listeners = new Set<() => void>();
-const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(state.coaches)); } catch {} };
-const emit = () => { state.v += 1; persist(); listeners.forEach((l) => l()); };
+const emit = () => { state.v += 1; listeners.forEach((l) => l()); };
 
 export const coachStore = {
   list: () => state.coaches,
   get: (id: string) => state.coaches.find((c) => c.id === id),
-  add(input: Omit<Coach, "id" | "createdAt" | "joinedAt" | "status"> & { joinedAt?: string; status?: CoachStatus }) {
-    const prefix = input.audience === "men" ? "C-M" : "C-W";
-    const nextNum = String(
-      Math.max(0, ...state.coaches.filter((c) => c.id.startsWith(prefix)).map((c) => parseInt(c.id.slice(prefix.length), 10) || 0)) + 1,
-    ).padStart(2, "0");
+
+  async init() {
+    try {
+      const { data: dbCoaches, error } = await supabase
+        .from("coaches")
+        .select("*")
+        .order("joined_at", { ascending: false });
+
+      if (error) throw error;
+
+      state.coaches = (dbCoaches || []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        audience: c.audience as CoachAudience,
+        specialty: c.specialty,
+        workingDays: (c.working_days || []) as Weekday[],
+        startTime: c.start_time || "",
+        endTime: c.end_time || "",
+        createdAt: c.joined_at + "T00:00:00.000Z",
+        joinedAt: c.joined_at,
+        status: c.status as CoachStatus,
+        photoUrl: c.photo_url,
+      }));
+      emit();
+    } catch (err) {
+      console.error("Error initializing coaches:", err);
+    }
+  },
+
+  async add(input: Omit<Coach, "id" | "createdAt" | "joinedAt" | "status"> & { joinedAt?: string; status?: CoachStatus; photoFile?: File }) {
+    const { photoFile, ...coachFields } = input;
+    let photoUrl: string | null = null;
+
+    if (photoFile) {
+      const fileExt = photoFile.name.split('.').pop() || 'jpg';
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, photoFile);
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+      photoUrl = publicUrl;
+    }
+
     const coach: Coach = {
-      id: `${prefix}${nextNum}`,
+      id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
-      joinedAt: input.joinedAt ?? todayIso(),
-      status: input.status ?? "active",
-      ...input,
+      joinedAt: coachFields.joinedAt ?? new Date().toISOString().slice(0, 10),
+      status: coachFields.status ?? "active",
+      photoUrl,
+      ...coachFields,
     };
+
+    try {
+      const { data: dbCoach, error: dbError } = await supabase
+        .from("coaches")
+        .insert({
+          name: coachFields.name,
+          audience: coachFields.audience,
+          specialty: coachFields.specialty,
+          working_days: coachFields.workingDays,
+          start_time: coachFields.startTime,
+          end_time: coachFields.endTime,
+          joined_at: coach.joinedAt,
+          status: coach.status,
+          photo_url: photoUrl
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error("Error inserting coach to Supabase:", dbError);
+      } else if (dbCoach) {
+        coach.id = dbCoach.id;
+      }
+    } catch (dbErr) {
+      console.error("Failed database insert for coach:", dbErr);
+    }
+
     state.coaches = [coach, ...state.coaches];
     emit();
     return coach;

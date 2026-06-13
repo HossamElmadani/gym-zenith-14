@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,15 +13,92 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Shield, Trash2, UserCog } from "lucide-react";
-import { gymStore, useGymStore } from "@/lib/gym-store";
+import { Plus, Shield, Trash2, UserCog, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
+
+export type StaffMember = {
+  id: string;
+  name: string;
+  email: string;
+  role: "owner" | "receptionist";
+  createdAt: string;
+  active: boolean;
+};
 
 export function StaffManagement() {
-  useGymStore((s) => s.v);
-  const staff = gymStore.getState().staff;
+  const { user } = useAuth();
+  const isOwner = user?.role === "owner";
+  
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+
+  const fetchStaff = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("staff")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast.error("Error loading staff: " + error.message);
+    } else if (data) {
+      setStaff(
+        data.map((s) => ({
+          id: s.id,
+          name: s.name,
+          email: s.email,
+          role: s.role as "owner" | "receptionist",
+          createdAt: s.created_at,
+          active: s.is_active,
+        }))
+      );
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchStaff();
+  }, []);
+
+  const toggleActive = async (id: string, currentStatus: boolean) => {
+    if (!isOwner) return;
+    
+    // Optimistic UI update
+    setStaff(prev => prev.map(s => s.id === id ? { ...s, active: !currentStatus } : s));
+
+    const { error } = await supabase
+      .from("staff")
+      .update({ is_active: !currentStatus })
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Error updating status: " + error.message);
+      fetchStaff(); // rollback
+    } else {
+      toast.success("Staff status updated");
+    }
+  };
+
+  const removeStaff = async (id: string, name: string) => {
+    if (!isOwner) return;
+    
+    const { error } = await supabase
+      .from("staff")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Error removing staff: " + error.message);
+    } else {
+      toast.success(`Removed ${name}`);
+      fetchStaff();
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -33,102 +110,141 @@ export function StaffManagement() {
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">Manage who can log in and what they can see.</p>
           </div>
-          <Button onClick={() => setOpen(true)} className="gap-1.5">
-            <Plus className="size-4" /> Create new staff
-          </Button>
+          {isOwner && (
+            <Button onClick={() => setOpen(true)} className="gap-1.5">
+              <Plus className="size-4" /> Create new staff
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="rounded-xl border border-border/60 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>Member</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {staff.map((s) => (
-                  <TableRow key={s.id} className="hover:bg-accent/30">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className={cn("size-9 rounded-full grid place-items-center text-xs font-semibold",
-                          s.role === "owner" ? "bg-primary/20 text-primary" : "bg-accent text-foreground")}>
-                          {s.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium">{s.name}</div>
-                          <div className="text-[11px] text-muted-foreground">Joined {new Date(s.createdAt).toLocaleDateString()}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{s.email}</TableCell>
-                    <TableCell>
-                      <Badge className={s.role === "owner" ? "bg-primary text-primary-foreground" : "bg-accent text-foreground"}>
-                        <UserCog className="size-3" /> {s.role === "owner" ? "Owner" : "Receptionist"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <button
-                        onClick={() => gymStore.toggleStaffActive(s.id)}
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium border",
-                          s.active ? "border-success/40 bg-success/10 text-success" : "border-muted bg-muted/30 text-muted-foreground",
-                        )}
-                      >
-                        <span className={cn("size-1.5 rounded-full", s.active ? "bg-success" : "bg-muted-foreground")} />
-                        {s.active ? "Active" : "Suspended"}
-                      </button>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="icon" variant="ghost"
-                        onClick={() => {
-                          gymStore.removeStaff(s.id);
-                          toast.success(`Removed ${s.name}`);
-                        }}
-                        className="hover:bg-destructive/20 hover:text-destructive"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </TableCell>
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="size-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>Member</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    {isOwner && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
-                ))}
-                {staff.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
-                      No staff yet — add your first teammate.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {staff.map((s) => (
+                    <TableRow key={s.id} className="hover:bg-accent/30">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className={cn("size-9 rounded-full grid place-items-center text-xs font-semibold",
+                            s.role === "owner" ? "bg-primary/20 text-primary" : "bg-accent text-foreground")}>
+                            {s.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">{s.name}</div>
+                            <div className="text-[11px] text-muted-foreground">Joined {new Date(s.createdAt).toLocaleDateString()}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{s.email}</TableCell>
+                      <TableCell>
+                        <Badge className={s.role === "owner" ? "bg-primary text-primary-foreground" : "bg-accent text-foreground"}>
+                          <UserCog className="size-3" /> {s.role === "owner" ? "Owner" : "Receptionist"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <button
+                          onClick={() => toggleActive(s.id, s.active)}
+                          disabled={!isOwner}
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium border",
+                            isOwner ? "cursor-pointer" : "cursor-default",
+                            s.active ? "border-success/40 bg-success/10 text-success" : "border-muted bg-muted/30 text-muted-foreground",
+                          )}
+                        >
+                          <span className={cn("size-1.5 rounded-full", s.active ? "bg-success" : "bg-muted-foreground")} />
+                          {s.active ? "Active" : "Suspended"}
+                        </button>
+                      </TableCell>
+                      {isOwner && (
+                        <TableCell className="text-right">
+                          <Button
+                            size="icon" variant="ghost"
+                            onClick={() => removeStaff(s.id, s.name)}
+                            className="hover:bg-destructive/20 hover:text-destructive"
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                  {staff.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={isOwner ? 5 : 4} className="text-center text-sm text-muted-foreground py-8">
+                        No staff yet — add your first teammate.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      <CreateStaffDialog open={open} onOpenChange={setOpen} />
+      <CreateStaffDialog open={open} onOpenChange={setOpen} onSuccess={fetchStaff} />
     </div>
   );
 }
 
-function CreateStaffDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+function CreateStaffDialog({ open, onOpenChange, onSuccess }: { open: boolean; onOpenChange: (o: boolean) => void; onSuccess: () => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"owner" | "receptionist">("receptionist");
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = () => {
+  const submit = async () => {
     if (!name.trim() || !email.trim() || !password.trim()) {
       toast.error("All fields are required");
       return;
     }
-    gymStore.addStaff({ name: name.trim(), email: email.trim().toLowerCase(), role });
-    toast.success("Staff created", { description: `${name} can now sign in as ${role}` });
-    setName(""); setEmail(""); setPassword(""); setRole("receptionist");
-    onOpenChange(false);
+    
+    setSubmitting(true);
+    try {
+      const tempClient = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY,
+        {
+          auth: { persistSession: false }
+        }
+      );
+      
+      const { data, error } = await tempClient.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          data: {
+            name: name.trim(),
+            role
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Staff created", { description: `${name} can now sign in as ${role}` });
+      setName(""); setEmail(""); setPassword(""); setRole("receptionist");
+      onOpenChange(false);
+      onSuccess();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -169,7 +285,9 @@ function CreateStaffDialog({ open, onOpenChange }: { open: boolean; onOpenChange
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={submit}>Create staff</Button>
+          <Button onClick={submit} disabled={submitting}>
+            {submitting ? <Loader2 className="size-4 animate-spin" /> : "Create staff"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

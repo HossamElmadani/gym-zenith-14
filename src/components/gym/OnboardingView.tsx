@@ -40,6 +40,7 @@ export function OnboardingView() {
   const [gender, setGender] = useState<"male" | "female" | "">("");
   const [age, setAge] = useState<string>("");
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -99,6 +100,7 @@ export function OnboardingView() {
     const f = files?.[0];
     if (!f) return;
     if (!f.type.startsWith("image/")) return toast.error(lang === "ar" ? "ملفات الصور فقط" : "Only image files");
+    setPhotoFile(f);
     const reader = new FileReader();
     reader.onload = () => setAvatar(reader.result as string);
     reader.readAsDataURL(f);
@@ -123,7 +125,7 @@ export function OnboardingView() {
     if (!canSubmit || !gender) return;
     setSubmitting(true);
     
-    setTimeout(() => {
+    setTimeout(async () => {
       const start = tzTodayISO(startDate);
       const months = PLAN_OPTIONS.find((p) => p.code === plan)?.months || 0;
       const prefix = gender === "male" ? "M" : "F";
@@ -142,51 +144,57 @@ export function OnboardingView() {
       const insuranceEnd = insurance ? tzAddMonthsISO(start, 12) : null;
       const planAmount = Math.max(0, cashNumber - (insurance ? 100 : 0));
 
-      const added = gymStore.addMember({
-        id,
-        name: finalName,
-        cin: finalCin,
-        phone: finalPhone,
-        gender,
-        age: finalAge,
-        plan,
-        subStart: start,
-        subEnd: endDate,
-        subMonths: months,
-        history: [{ date: start, plan, months, amount: planAmount }],
-        coachId: coachId === "none" ? null : coachId,
-        insuranceEnd,
-      });
-      
-      gymStore.logCash({
-        amount: planAmount, kind: "registration", planCode: plan,
-        memberId: added.id, memberName: added.name,
-        note: `Registration · ${plan}`,
-      });
-
-      if (insurance) {
-        gymStore.logCash({
-          amount: 100, kind: "insurance",
-          memberId: added.id, memberName: added.name,
-          note: lang === "ar" ? "تأمين سنوي" : "Annual insurance",
+      try {
+        const added = await gymStore.addMember({
+          id,
+          name: finalName,
+          cin: finalCin,
+          phone: finalPhone,
+          gender,
+          age: finalAge,
+          plan,
+          subStart: start,
+          subEnd: endDate,
+          subMonths: months,
+          history: [{ date: start, plan, months, amount: planAmount }],
+          coachId: coachId === "none" ? null : coachId,
+          insuranceEnd,
+          photoFile: photoFile || undefined,
         });
+        
+        await gymStore.logCash({
+          amount: planAmount, kind: "registration", planCode: plan,
+          memberId: added.id, memberName: added.name,
+          note: `Registration · ${plan}`,
+        });
+
+        if (insurance) {
+          await gymStore.logCash({
+            amount: 100, kind: "insurance",
+            memberId: added.id, memberName: added.name,
+            note: lang === "ar" ? "تأمين سنوي" : "Annual insurance",
+          });
+        }
+        
+        setRegistered({
+          id: added.id, name: added.name, cin: added.cin, phone: added.phone,
+          planCode: plan, amount: cashNumber, startDate: start, endDate, gender,
+        });
+        
+        toast.success(lang === "ar" ? "تم التسجيل بنجاح" : "Registered successfully", {
+          description: `${added.name} · ${added.id} · ${lang === "ar" ? "دفع" : "paid"} ${cashNumber} ${t("common.currency")}`,
+        });
+      } catch (err) {
+        toast.error("Registration failed: " + (err as Error).message);
+      } finally {
+        setSubmitting(false);
       }
-      
-      setSubmitting(false);
-      setRegistered({
-        id: added.id, name: added.name, cin: added.cin, phone: added.phone,
-        planCode: plan, amount: cashNumber, startDate: start, endDate, gender,
-      });
-      
-      toast.success(lang === "ar" ? "تم التسجيل بنجاح" : "Registered successfully", {
-        description: `${added.name} · ${added.id} · ${lang === "ar" ? "دفع" : "paid"} ${cashNumber} ${t("common.currency")}`,
-      });
     }, 600);
   };
 
   const resetForm = () => {
     setName(""); setCin(""); setCinStatus("idle"); setPhone("");
-    setGender(""); setAvatar(null); setPlan("3M");
+    setGender(""); setAvatar(null); setPhotoFile(null); setPlan("3M");
     setStartDate(new Date()); setCashAmount(String(PLAN_PRICES["3M"]));
     setCoachId("none"); setInsurance(false);
     setRegistered(null);

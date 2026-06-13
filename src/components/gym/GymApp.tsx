@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Bell, BookUser, Dumbbell, LogOut, ScanLine, Shield, UserPlus, Users } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { BookUser, Dumbbell, LogOut, ScanLine, Shield, UserPlus, Users, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import { dayName } from "@/lib/gym-data";
 import { useCurrentShift } from "@/lib/gym-shift";
 import { useI18n, type DictKey } from "@/lib/i18n";
 import { LiveSyncIndicator } from "./LiveSyncIndicator";
+import { initGymStore } from "@/lib/gym-store";
 
 type View = "admin" | "members" | "onboard" | "reception" | "coaches" | "staff";
 
@@ -36,7 +37,22 @@ const TABS: { key: View; label: string; tKey: DictKey; icon: typeof Users; roles
 ];
 
 export function GymApp() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      initGymStore();
+    }
+  }, [user]);
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="size-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
   if (!user) return <LoginScreen />;
   return <Workspace />;
 }
@@ -96,21 +112,6 @@ function Workspace() {
           </div> */}
 
           <div className="ms-auto flex items-center gap-2">
-            <div className="flex items-center rounded-xl border border-border/60 bg-card/40 p-1 overflow-x-auto">
-              {visibleTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setView(tab.key)}
-                  className={cn(
-                    "px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 transition-all whitespace-nowrap",
-                    view === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <tab.icon className="size-3.5" /> {t(tab.tKey)}
-                </button>
-              ))}
-            </div>
-
             <button
               onClick={toggle}
               aria-label="Toggle language"
@@ -120,10 +121,6 @@ function Workspace() {
               <span className="text-muted-foreground">/</span>
               <span className={cn(lang === "fr" ? "text-primary" : "text-muted-foreground")}>FR</span>
             </button>
-
-            <Button size="icon" variant="ghost" className="hover:bg-accent" aria-label={t("common.notify")}>
-              <Bell className="size-4" />
-            </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

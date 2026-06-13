@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Search, CheckCircle, Activity, Clock, Users, AlertTriangle, Dumbbell,
@@ -14,18 +14,9 @@ import {
   MEMBERS, daysRemaining, subStatus, todayGender, type Member,
 } from "@/lib/gym-data";
 import { useCoaches, type Coach } from "@/lib/coaches-data";
-import { gymStore } from "@/lib/gym-store";
+import { gymStore, useGymStore, type CheckIn } from "@/lib/gym-store";
 import { useI18n } from "@/lib/i18n";
-
-type Role = "Member" | "Coach";
-type CheckIn = {
-  id: string;
-  personId: string;
-  name: string;
-  role: Role;
-  gender?: "male" | "female";
-  ts: number;
-};
+import { tzTodayISO } from "@/lib/gym-tz";
 
 const initials = (n: string) =>
   n.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -38,7 +29,7 @@ export function ReceptionDesk() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<"members" | "coaches">("members");
-  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const checkIns = useGymStore((s) => s.checkIns);
   const coaches = useCoaches();
 
   const shift = useMemo(() => todayGender(), []);
@@ -56,13 +47,12 @@ export function ReceptionDesk() {
 
   const eligibleMembers = useMemo(() => {
     return MEMBERS.filter((m) => {
-      if (checkedInMemberIds.has(m.id)) return false;
       if (shift === "men" && m.gender !== "male") return false;
       if (shift === "women" && m.gender !== "female") return false;
       if (shift === "closed") return false;
       return true;
     });
-  }, [shift, checkedInMemberIds]);
+  }, [shift]);
 
   const filteredMembers = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -78,13 +68,12 @@ export function ReceptionDesk() {
   const eligibleCoaches = useMemo(() => {
     return coaches.filter((c) => {
       if (c.status !== "active") return false;
-      if (checkedInCoachIds.has(c.id)) return false;
       if (shift === "men"   && c.audience !== "men")   return false;
       if (shift === "women" && c.audience !== "women") return false;
       if (shift === "closed") return false;
       return true;
     });
-  }, [coaches, shift, checkedInCoachIds]);
+  }, [coaches, shift]);
 
   const filteredCoaches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -98,32 +87,30 @@ export function ReceptionDesk() {
   }, [eligibleCoaches, query]);
 
   const handleCheckInMember = (m: Member) => {
+    const today = tzTodayISO();
+    if (m.subStart && today < m.subStart) {
+      toast.error(
+        lang === "ar" 
+          ? `الاشتراك لم يبدأ بعد: ${m.name} (يبدأ في ${m.subStart})` 
+          : `L'abonnement n'a pas encore commencé : ${m.name} (Commence le ${m.subStart})`
+      );
+      return;
+    }
+
     if (daysRemaining(m.subEnd) <= 0) {
       toast.error(lang === "ar" ? `الاشتراك منتهي: ${m.name}` : `Abonnement expiré : ${m.name}`);
       return;
     }
     
-    // تسجيل محلي للواجهة (وهذه الدالة ستقوم آلياً بالمزامنة السحابية عبر gym-store)
     gymStore.recordCheckIn(m.id);
-    const now = Date.now();
-    setCheckIns((prev) => [
-      { id: `${m.id}-${now}`, personId: m.id, name: m.name, role: "Member", gender: m.gender, ts: now },
-      ...prev,
-    ]);
     
     toast.success(lang === "ar" ? `تم تسجيل دخول: ${m.name}` : `Pointage réussi pour ${m.name}`);
     setQuery("");
     inputRef.current?.focus();
   };
 
-const handleCheckInCoach = (c: Coach) => {
-    // تسجيل محلي للواجهة (وهذه الدالة ستقوم آلياً بالمزامنة السحابية عبر gym-store)
-    gymStore.recordCoachAttendance(c.id, c.name); // 👈 التعديل هنا
-    const now = Date.now();
-    setCheckIns((prev) => [
-      { id: `${c.id}-${now}`, personId: c.id, name: c.name, role: "Coach", ts: now },
-      ...prev,
-    ]);
+  const handleCheckInCoach = (c: Coach) => {
+    gymStore.recordCoachAttendance(c.id, c.name);
     
     toast.success(lang === "ar" ? `تم تسجيل المدرب: ${c.name}` : `Coach pointé : ${c.name}`);
     setQuery("");
@@ -170,6 +157,9 @@ const handleCheckInCoach = (c: Coach) => {
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <Avatar className="size-9">
+                    {c.photoUrl ? (
+                      <AvatarImage src={c.photoUrl} alt={c.name} className="object-cover" />
+                    ) : null}
                     <AvatarFallback
                       className={cn(
                         "text-[11px]",
@@ -261,7 +251,13 @@ const handleCheckInCoach = (c: Coach) => {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[640px] overflow-auto pr-1">
                     {filteredMembers.map((m) => (
-                      <MemberCheckInCard key={m.id} member={m} lang={lang} onCheckIn={handleCheckInMember} />
+                      <MemberCheckInCard
+                        key={m.id}
+                        member={m}
+                        lang={lang}
+                        isCheckedIn={checkedInMemberIds.has(m.id)}
+                        onCheckIn={handleCheckInMember}
+                      />
                     ))}
                   </div>
                 )}
@@ -275,7 +271,13 @@ const handleCheckInCoach = (c: Coach) => {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[640px] overflow-auto pr-1">
                     {filteredCoaches.map((c) => (
-                      <CoachCheckInCard key={c.id} coach={c} lang={lang} onCheckIn={handleCheckInCoach} />
+                      <CoachCheckInCard
+                        key={c.id}
+                        coach={c}
+                        lang={lang}
+                        isCheckedIn={checkedInCoachIds.has(c.id)}
+                        onCheckIn={handleCheckInCoach}
+                      />
                     ))}
                   </div>
                 )}
@@ -306,21 +308,24 @@ function ClosedState({ label }: { label: string }) {
 }
 
 function MemberCheckInCard({
-  member, lang, onCheckIn,
+  member, lang, isCheckedIn, onCheckIn,
 }: {
-  member: Member; lang: "ar" | "fr"; onCheckIn: (m: Member) => void;
+  member: Member; lang: "ar" | "fr"; isCheckedIn: boolean; onCheckIn: (m: Member) => void;
 }) {
   const days = daysRemaining(member.subEnd);
-  const status = subStatus(member.subEnd);
+  const status = subStatus(member.subEnd, member.subStart);
   const expired = status === "expired";
+  const isPending = status === "pending";
 
   const statusTone =
-    status === "active"   ? "bg-success/20 text-success border-success/30"
+    isPending             ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+    : status === "active"   ? "bg-success/20 text-success border-success/30"
   : status === "expiring" ? "bg-warning/20 text-warning border-warning/30"
                           : "bg-destructive/20 text-destructive border-destructive/30";
 
   const statusLabel =
-    status === "active"   ? (lang === "ar" ? "نشط" : "Actif")
+    isPending             ? (lang === "ar" ? "في الانتظار" : "En attente")
+    : status === "active"   ? (lang === "ar" ? "نشط" : "Actif")
   : status === "expiring" ? (lang === "ar" ? "قارب الانتهاء" : "Expire Bientôt")
                           : (lang === "ar" ? "منتهي" : "Expiré");
 
@@ -328,11 +333,14 @@ function MemberCheckInCard({
     <div
       className={cn(
         "group rounded-2xl border border-border/60 bg-card/40 p-3 flex flex-col gap-3 transition-all hover:border-primary/40 hover:bg-card/60",
-        expired && "opacity-80",
+        (expired || isPending || isCheckedIn) && "opacity-80",
       )}
     >
       <div className="flex items-center gap-3 min-w-0">
         <Avatar className="size-11 shrink-0">
+          {member.photoUrl ? (
+            <AvatarImage src={member.photoUrl} alt={member.name} className="object-cover" />
+          ) : null}
           <AvatarFallback
             className={cn(
               "text-sm font-semibold",
@@ -355,38 +363,56 @@ function MemberCheckInCard({
           {statusLabel}
         </Badge>
         <div className="text-[11px] text-muted-foreground">
-          <bdi dir="ltr">{days > 0 ? days : 0}j {lang === "ar" ? "" : "restants"}</bdi>
+          {isPending ? (
+            <span className="text-amber-400 font-medium">
+              {lang === "ar" ? "يبدأ في " : "Commence le "}{member.subStart}
+            </span>
+          ) : (
+            <bdi dir="ltr">{days > 0 ? days : 0}j {lang === "ar" ? "" : "restants"}</bdi>
+          )}
         </div>
       </div>
 
       <Button
         onClick={() => onCheckIn(member)}
-        disabled={expired}
+        disabled={expired || isPending || isCheckedIn}
         size="sm"
         className={cn(
           "w-full gap-1.5",
           expired && "bg-destructive/20 text-destructive hover:bg-destructive/20 cursor-not-allowed",
+          isPending && "bg-amber-500/20 text-amber-300 hover:bg-amber-500/20 cursor-not-allowed",
+          isCheckedIn && "bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed border-none",
         )}
-        variant={expired ? "secondary" : "default"}
+        variant={expired ? "secondary" : isPending ? "secondary" : isCheckedIn ? "ghost" : "default"}
       >
         <CheckCircle className="size-4" />
         {expired
           ? (lang === "ar" ? "منتهي" : "Expiré")
-          : (lang === "ar" ? "تسجيل الدخول" : "Pointer")}
+          : isPending
+            ? (lang === "ar" ? "لم يبدأ" : "En attente")
+            : isCheckedIn
+              ? (lang === "ar" ? "مسجل اليوم" : "Déjà pointé")
+              : (lang === "ar" ? "تسجيل الدخول" : "Pointer")}
       </Button>
     </div>
   );
 }
 
 function CoachCheckInCard({
-  coach, lang, onCheckIn,
+  coach, lang, isCheckedIn, onCheckIn,
 }: {
-  coach: Coach; lang: "ar" | "fr"; onCheckIn: (c: Coach) => void;
+  coach: Coach; lang: "ar" | "fr"; isCheckedIn: boolean; onCheckIn: (c: Coach) => void;
 }) {
   return (
-    <div className="group rounded-2xl border border-border/60 bg-card/40 p-3 flex flex-col gap-3 transition-all hover:border-primary/40 hover:bg-card/60">
+    <div className={cn(
+      "group rounded-2xl border border-border/60 bg-card/40 p-3 flex flex-col gap-3 transition-all hover:border-primary/40 hover:bg-card/60",
+      isCheckedIn && "opacity-80"
+    )}>
       <div className="flex items-center gap-3 min-w-0">
         <Avatar className="size-11 shrink-0">
+          {coach.photoUrl ? (
+            <AvatarImage src={coach.photoUrl} alt={coach.name} className="object-cover" />
+          ) : null}
           <AvatarFallback className="text-sm font-semibold bg-primary/20 text-primary">
             {initials(coach.name)}
           </AvatarFallback>
@@ -406,9 +432,20 @@ function CoachCheckInCard({
         </div>
       </div>
 
-      <Button onClick={() => onCheckIn(coach)} size="sm" className="w-full gap-1.5">
+      <Button
+        onClick={() => onCheckIn(coach)}
+        disabled={isCheckedIn}
+        size="sm"
+        className={cn(
+          "w-full gap-1.5",
+          isCheckedIn && "bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed border-none",
+        )}
+        variant={isCheckedIn ? "ghost" : "default"}
+      >
         <CheckCircle className="size-4" />
-        {lang === "ar" ? "بدء الحصة" : "Démarrer le service"}
+        {isCheckedIn
+          ? (lang === "ar" ? "مسجل اليوم" : "Déjà pointé")
+          : (lang === "ar" ? "بدء الحصة" : "Démarrer le service")}
       </Button>
     </div>
   );

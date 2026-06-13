@@ -59,8 +59,8 @@ export function tzDayOfWeek(d = new Date()): number {
 /** Full weekday name in Casablanca (مترجم حسب لغة التطبيق). */
 export function tzWeekdayName(d = new Date()): string {
   // جلب اللغة الحالية من localStorage
-  const lang = typeof window !== "undefined" ? localStorage.getItem("pulse.lang") || "ar" : "ar";
-  const locale = lang === "ar" ? "ar-MA" : "en-US";
+  const lang = typeof window !== "undefined" ? localStorage.getItem("pulse.lang") || "fr" : "fr";
+  const locale = lang === "ar" ? "ar-MA" : "fr-FR";
 
   return new Intl.DateTimeFormat(locale, {
     timeZone: APP_TZ,
@@ -91,8 +91,8 @@ export function tzFormatDate(iso: string, opts: Intl.DateTimeFormatOptions = {
   day: "numeric", month: "long", year: "numeric",
 }): string {
   // جلب اللغة الحالية للموقع من المتصفح
-  const lang = typeof window !== "undefined" ? localStorage.getItem("pulse.lang") || "ar" : "ar";
-  const locale = lang === "ar" ? "ar-MA" : "en-US";
+  const lang = typeof window !== "undefined" ? localStorage.getItem("pulse.lang") || "fr" : "fr";
+  const locale = lang === "ar" ? "ar-MA" : "fr-FR";
 
   return new Intl.DateTimeFormat(locale, { ...opts, timeZone: APP_TZ })
     .format(new Date(`${iso}T12:00:00Z`));
@@ -103,3 +103,21 @@ export function tzFormatTime(d = new Date()): string {
   const { hour, minute } = partsOf(d);
   return `${hour}:${minute}`;
 }
+
+/** Start of today in Casablanca as a UTC ISO string. */
+export function tzStartOfTodayUTC(d = new Date()): string {
+  const parts = partsOf(d);
+  const localHour = parseInt(parts.hour, 10);
+  const localMin = parseInt(parts.minute, 10);
+  const localSec = d.getSeconds();
+  const localMs = d.getMilliseconds();
+  
+  const offsetMs =
+    localHour * 3600 * 1000 +
+    localMin * 60 * 1000 +
+    localSec * 1000 +
+    localMs;
+    
+  return new Date(d.getTime() - offsetMs).toISOString();
+}
+

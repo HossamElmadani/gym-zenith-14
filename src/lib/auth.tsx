@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { supabase } from "./supabase";
 
 export type Role = "owner" | "receptionist";
 
@@ -10,47 +11,118 @@ export type AuthUser = {
 
 type AuthCtx = {
   user: AuthUser | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
-const KEY = "pulse.auth";
-
-const KNOWN: Record<string, { name: string; role: Role; password: string }> = {
-  "admin@gym.com": { name: "Alex Owner", role: "owner", password: "admin" },
-  "reception@gym.com": { name: "Riley Front-Desk", role: "receptionist", password: "reception" },
-};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Helper to fetch profile from public.staff
+  const fetchStaffProfile = async (userId: string): Promise<AuthUser | null> => {
+    const { data, error } = await supabase
+      .from("staff")
+      .select("name, email, role, is_active")
+      .eq("id", userId)
+      .single();
+
+    if (error || !data) {
+      console.error("Error fetching staff profile:", error);
+      return null;
+    }
+
+    if (!data.is_active) {
+      console.warn("Staff member is not active:", data.email);
+      return null;
+    }
+
+    return {
+      email: data.email,
+      name: data.name,
+      role: data.role as Role,
+    };
+  };
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setUser(JSON.parse(raw));
-    } catch {}
+    // 1. Check active session on mount
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const profile = await fetchStaffProfile(session.user.id);
+        if (profile) {
+          setUser(profile);
+        } else {
+          // If profile fetch fails or inactive, log out immediately
+          await supabase.auth.signOut();
+          setUser(null);
+        }
+      }
+      setLoading(false);
+    });
+
+    // 2. Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const profile = await fetchStaffProfile(session.user.id);
+        if (profile) {
+          setUser(profile);
+        } else {
+          await supabase.auth.signOut();
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const e = email.trim().toLowerCase();
-    const k = KNOWN[e];
-    if (!k) throw new Error("Unknown email. Try admin@gym.com or reception@gym.com");
-    if (password && k.password && password !== k.password) {
-      // accept any password in demo, but if both provided must match — soft check
+  const login = async (email: string, password: string): Promise<AuthUser> => {
+    const cleanEmail = email.trim().toLowerCase();
+    
+    // Sign in using Supabase Auth
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: cleanEmail,
+      password,
+    });
+
+    if (error) {
+      throw error;
     }
-    const u: AuthUser = { email: e, name: k.name, role: k.role };
-    setUser(u);
-    localStorage.setItem(KEY, JSON.stringify(u));
-    return u;
+
+    if (!data.user) {
+      throw new Error("Login failed: User record not found.");
+    }
+
+    // Immediately fetch and check profile
+    const profile = await fetchStaffProfile(data.user.id);
+    if (!profile) {
+      await supabase.auth.signOut();
+      throw new Error("Access denied: Your account is not registered in the staff database, or has been suspended.");
+    }
+
+    setUser(profile);
+    return profile;
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem(KEY);
+    supabase.auth.signOut().then(() => {
+      setUser(null);
+    });
   };
 
-  return <Ctx.Provider value={{ user, login, logout }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ user, loading, login, logout }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export function useAuth() {
